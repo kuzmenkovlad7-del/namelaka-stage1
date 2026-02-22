@@ -1,0 +1,19 @@
+[Unit]
+Description=Namelaka API Adapter (React frontend)
+After=network.target
+
+[Service]
+Type=simple
+Environment=PORT=3010
+Environment=MEDUSA_URL=http://127.0.0.1:9000
+# Environment=MEDUSA_PUBLISHABLE_KEY=pk_...
+Environment=DATA_DIR=/var/www/namelaka-stage1
+ExecStartPre=/bin/bash -lc 'lsof -ti tcp:3010 | xargs -r kill -9 || true'
+ExecStart=/usr/bin/node /var/www/namelaka-react-app/server/adapter-server.mjs
+Restart=always
+RestartSec=1
+User=root
+WorkingDirectory=/var/www/namelaka-react-app
+
+[Install]
+WantedBy=multi-user.target

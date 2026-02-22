@@ -1,0 +1,7 @@
+{
+  "environment": "production",
+  "businessLocation": "Ukraine",
+  "apiUrl": "/api",
+  "backendHost": "https://namelaka.ua",
+  "googleMapsApiKey": "AIzaSyBpYLBccaIJQRWY5OJCqo3eqoenRME8Xb4"
+}

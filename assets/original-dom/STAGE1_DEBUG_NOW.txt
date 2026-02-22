@@ -1,0 +1,1984 @@
+STAGE1 DEBUG NOW
+Sun Feb 22 10:14:48 EET 2026
+ROOT=/Users/a1111/projects/namelaka-stage1
+APP=/Users/a1111/projects/namelaka-stage1/app
+
+================================================================
+## PORTS
+
+-- PORT 3000 --
+free
+
+-- PORT 3001 --
+free
+
+-- PORT 3002 --
+free
+
+-- PORT 3010 --
+free
+
+
+================================================================
+## API HEADERS CHECK
+
+CMD: curl -si http://127.0.0.1:3010/api/categories | head -n 20; echo; curl -si http://127.0.0.1:3010/api/products | head -n 20
+
+
+
+================================================================
+## API PRODUCT CATEGORY SUMMARY (from /api/products)
+
+CMD: node - <<'NODE'\n(async () => {\n  try {\n    const res = await fetch('http://127.0.0.1:3010/api/products');\n    const arr = await res.json();\n    console.log('count=', Array.isArray(arr) ? arr.length : 'not-array');\n    if (!Array.isArray(arr)) return;\n    const summary = arr.map((p, i) => ({\n      i,\n      id: p?.id,\n      title: p?.title || p?.name,\n      product_category_id: p?.product_category_id ?? null,\n      category_id: p?.category_id ?? null,\n      categories_len: Array.isArray(p?.categories) ? p.categories.length : null,\n      product_category_obj_id: p?.product_category?.id ?? null,\n      metadata_category_id: p?.metadata?.category_id ?? null,\n      metadata_category_handle: p?.metadata?.category_handle ?? null,\n      handle: p?.handle ?? null\n    }));\n    console.log(JSON.stringify(summary.slice(0, 20), null, 2));\n    const nonNull = summary.filter(x => x.product_category_id || x.category_id || x.product_category_obj_id || x.metadata_category_id || x.categories_len);\n    console.log('products_with_any_category_signal=', nonNull.length);\n  } catch (e) {\n    console.error(e);\n  }\n})();\nNODE
+
+bash: -c: line 0: syntax error near unexpected token `('
+bash: -c: line 0: `node - <<'NODE'\n(async () => {\n  try {\n    const res = await fetch('http://127.0.0.1:3010/api/products');\n    const arr = await res.json();\n    console.log('count=', Array.isArray(arr) ? arr.length : 'not-array');\n    if (!Array.isArray(arr)) return;\n    const summary = arr.map((p, i) => ({\n      i,\n      id: p?.id,\n      title: p?.title || p?.name,\n      product_category_id: p?.product_category_id ?? null,\n      category_id: p?.category_id ?? null,\n      categories_len: Array.isArray(p?.categories) ? p.categories.length : null,\n      product_category_obj_id: p?.product_category?.id ?? null,\n      metadata_category_id: p?.metadata?.category_id ?? null,\n      metadata_category_handle: p?.metadata?.category_handle ?? null,\n      handle: p?.handle ?? null\n    }));\n    console.log(JSON.stringify(summary.slice(0, 20), null, 2));\n    const nonNull = summary.filter(x => x.product_category_id || x.category_id || x.product_category_obj_id || x.metadata_category_id || x.categories_len);\n    console.log('products_with_any_category_signal=', nonNull.length);\n  } catch (e) {\n    console.error(e);\n  }\n})();\nNODE'
+
+================================================================
+## RAW .local-data PRODUCT SHAPE SUMMARY
+
+CMD: cd '/Users/a1111/projects/namelaka-stage1/app' && node - <<'NODE'\nconst fs = require('fs');\nconst p = '.local-data/medusa_products.json';\nif (!fs.existsSync(p)) { console.log('MISSING', p); process.exit(0); }\nconst raw = JSON.parse(fs.readFileSync(p, 'utf8'));\nconst arr = Array.isArray(raw) ? raw : (raw.products || raw.data || []);\nconsole.log('raw_count=', Array.isArray(arr) ? arr.length : 'not-array');\nconst sample = (arr || []).slice(0, 10).map((x, i) => ({\n  i,\n  id: x?.id,\n  title: x?.title || x?.name,\n  keys: Object.keys(x || {}).slice(0, 80),\n  product_category_id: x?.product_category_id ?? null,\n  product_category_obj_id: x?.product_category?.id ?? null,\n  categories_len: Array.isArray(x?.categories) ? x.categories.length : null,\n  categories_ids: Array.isArray(x?.categories) ? x.categories.map(c => c?.id) : null,\n  metadata_category_id: x?.metadata?.category_id ?? null,\n  metadata_category_handle: x?.metadata?.category_handle ?? null,\n  handle: x?.handle ?? null\n}));\nconsole.log(JSON.stringify(sample, null, 2));\nconst counts = {\n  product_category_id: 0,\n  product_category_obj: 0,\n  categories_arr: 0,\n  metadata_category_id: 0,\n  metadata_category_handle: 0\n};\nfor (const x of (arr || [])) {\n  if (x?.product_category_id) counts.product_category_id++;\n  if (x?.product_category?.id) counts.product_category_obj++;\n  if (Array.isArray(x?.categories) && x.categories.length) counts.categories_arr++;\n  if (x?.metadata?.category_id) counts.metadata_category_id++;\n  if (x?.metadata?.category_handle) counts.metadata_category_handle++;\n}\nconsole.log('raw_category_signal_counts=', counts);\nNODE
+
+bash: -c: line 0: syntax error near unexpected token `('
+bash: -c: line 0: `cd '/Users/a1111/projects/namelaka-stage1/app' && node - <<'NODE'\nconst fs = require('fs');\nconst p = '.local-data/medusa_products.json';\nif (!fs.existsSync(p)) { console.log('MISSING', p); process.exit(0); }\nconst raw = JSON.parse(fs.readFileSync(p, 'utf8'));\nconst arr = Array.isArray(raw) ? raw : (raw.products || raw.data || []);\nconsole.log('raw_count=', Array.isArray(arr) ? arr.length : 'not-array');\nconst sample = (arr || []).slice(0, 10).map((x, i) => ({\n  i,\n  id: x?.id,\n  title: x?.title || x?.name,\n  keys: Object.keys(x || {}).slice(0, 80),\n  product_category_id: x?.product_category_id ?? null,\n  product_category_obj_id: x?.product_category?.id ?? null,\n  categories_len: Array.isArray(x?.categories) ? x.categories.length : null,\n  categories_ids: Array.isArray(x?.categories) ? x.categories.map(c => c?.id) : null,\n  metadata_category_id: x?.metadata?.category_id ?? null,\n  metadata_category_handle: x?.metadata?.category_handle ?? null,\n  handle: x?.handle ?? null\n}));\nconsole.log(JSON.stringify(sample, null, 2));\nconst counts = {\n  product_category_id: 0,\n  product_category_obj: 0,\n  categories_arr: 0,\n  metadata_category_id: 0,\n  metadata_category_handle: 0\n};\nfor (const x of (arr || [])) {\n  if (x?.product_category_id) counts.product_category_id++;\n  if (x?.product_category?.id) counts.product_category_obj++;\n  if (Array.isArray(x?.categories) && x.categories.length) counts.categories_arr++;\n  if (x?.metadata?.category_id) counts.metadata_category_id++;\n  if (x?.metadata?.category_handle) counts.metadata_category_handle++;\n}\nconsole.log('raw_category_signal_counts=', counts);\nNODE'
+
+================================================================
+## ADAPTER SERVER (first 260 lines)
+
+PATH: /Users/a1111/projects/namelaka-stage1/app/server/adapter-server.mjs
+BYTES: 4655
+
+import http from 'node:http'
+import fs from 'node:fs'
+import path from 'node:path'
+
+const PORT = Number(process.env.PORT || 3010)
+const MEDUSA_URL = process.env.MEDUSA_URL || 'http://127.0.0.1:9000'
+const MEDUSA_KEY = process.env.MEDUSA_PUBLISHABLE_KEY || ''
+const DATA_DIR = process.env.DATA_DIR || '/var/www/namelaka-stage1'
+const CATS_FILE = path.join(DATA_DIR, 'medusa_categories.json')
+const PRODS_FILE = path.join(DATA_DIR, 'medusa_products.json')
+
+function send(res, code, data, type='application/json') {
+  res.writeHead(code, { 'Content-Type': type, 'Access-Control-Allow-Origin': '*', 'Cache-Control': 'no-store' })
+  res.end(type === 'application/json' ? JSON.stringify(data) : data)
+}
+function parseJSONFile(file, fallback) {
+  try { return JSON.parse(fs.readFileSync(file, 'utf8')) } catch { return fallback }
+}
+function pick(obj, ...keys) { for (const k of keys) if (obj && obj[k] != null) return obj[k]; return undefined }
+function normCats(raw) {
+  const arr = Array.isArray(raw) ? raw : raw?.product_categories || raw?.categories || []
+  return arr.map((c, i) => ({ id: c.id || String(i), name: c.name || c.title || 'Category', description: c.description || '', handle: c.handle || '', rank: Number.isFinite(c.rank) ? c.rank : i, images: Array.isArray(c.images) ? c.images : [] }))
+}
+function normProducts(raw) {
+  const arr = Array.isArray(raw) ? raw : raw?.products || []
+  return arr.map((p) => ({
+    id: p.id,
+    name: pick(p,'name','title') || 'Product',
+    title: pick(p,'title','name') || 'Product',
+    description: p.description || '',
+    smallSizeDescription: p.smallSizeDescription || '',
+    bigSizeDescription: p.bigSizeDescription || '',
+    images: Array.isArray(p.images) ? p.images.map(x => typeof x === 'string' ? x : x?.url).filter(Boolean) : [],
+    price: p.price ?? null,
+    oldPrice: p.oldPrice ?? null,
+    hearts: Number(p.hearts || 0),
+    handle: p.handle || '',
+    product_category_id: p.product_category_id || p.categoryId || p.category?.id || null,
+    thumbnail: p.thumbnail || null,
+    variants: p.variants || []
+  }))
+}
+async function medusaFetch(url) {
+  const headers = { 'accept': 'application/json' }
+  if (MEDUSA_KEY) headers['x-publishable-api-key'] = MEDUSA_KEY
+  const r = await fetch(url, { headers })
+  if (!r.ok) throw new Error(`medusa ${r.status}`)
+  return r.json()
+}
+async function loadData() {
+  try {
+    const [cats, prods] = await Promise.all([
+      medusaFetch(`${MEDUSA_URL}/store/product-categories`),
+      medusaFetch(`${MEDUSA_URL}/store/products?limit=200`)
+    ])
+    return { source: 'medusa', cats: normCats(cats), prods: normProducts(prods), medusa: true }
+  } catch {
+    const cats = normCats(parseJSONFile(CATS_FILE, []))
+    const prods = normProducts(parseJSONFile(PRODS_FILE, []))
+    return { source: 'fallback', cats, prods, medusa: false }
+  }
+}
+
+const server = http.createServer(async (req, res) => {
+  const url = new URL(req.url, `http://${req.headers.host || 'localhost'}`)
+  if (req.method === 'OPTIONS') return send(res, 204, {})
+  if (url.pathname === '/_health') {
+    const d = await loadData()
+    return send(res, 200, { ok:true, port:PORT, medusa_url:MEDUSA_URL, medusa_key_set:Boolean(MEDUSA_KEY), medusa:d.medusa, source:d.source, counts:{ categories:d.cats.length, products:d.prods.length }, fallback:{ catsFile:CATS_FILE, prodsFile:PRODS_FILE } })
+  }
+  const d = await loadData()
+  const p = url.pathname
+  if (p === '/api/categories') return send(res, 200, d.cats)
+  if (p === '/api/products') return send(res, 200, d.prods)
+  if (p === '/api/test/products') return send(res, 200, d.prods.slice(0,20))
+  if (p.startsWith('/api/search')) {
+    const q = (url.searchParams.get('search') || '').toLowerCase().trim()
+    const list = !q ? d.prods : d.prods.filter(x => `${x.name} ${x.title} ${x.description}`.toLowerCase().includes(q))
+    return send(res, 200, list)
+  }
+  const mProd = p.match(/^\/api\/products\/([^/]+)$/)
+  if (mProd) {
+    const id = decodeURIComponent(mProd[1])
+    const item = d.prods.find(x => x.id === id || x.handle === id)
+    return item ? send(res, 200, item) : send(res, 404, { error:'Not found' })
+  }
+  const mCatProducts = p.match(/^\/api\/([^/]+)\/products$/)
+  if (mCatProducts) {
+    const catId = decodeURIComponent(mCatProducts[1])
+    const list = d.prods.filter(x => x.product_category_id === catId || x.categoryId === catId || x.categoryHandle === catId)
+    return send(res, 200, list)
+  }
+  if (/^\/api\/products\/hearts\//.test(p)) return send(res, 200, { ok:true })
+  return send(res, 404, { error:'Not found', path:p })
+})
+server.listen(PORT, '0.0.0.0', () => console.log(`Adapter on :${PORT}`))
+
+================================================================
+## ADAPTER ROUTES / NORMALIZATION GREP
+
+CMD: rg -n 'medusaFetch|/api/categories|/api/products|product_category_id|categories|metadata' '/Users/a1111/projects/namelaka-stage1/app/server/adapter-server.mjs'
+
+9:const CATS_FILE = path.join(DATA_DIR, 'medusa_categories.json')
+21:  const arr = Array.isArray(raw) ? raw : raw?.product_categories || raw?.categories || []
+38:    product_category_id: p.product_category_id || p.categoryId || p.category?.id || null,
+43:async function medusaFetch(url) {
+53:      medusaFetch(`${MEDUSA_URL}/store/product-categories`),
+54:      medusaFetch(`${MEDUSA_URL}/store/products?limit=200`)
+69:    return send(res, 200, { ok:true, port:PORT, medusa_url:MEDUSA_URL, medusa_key_set:Boolean(MEDUSA_KEY), medusa:d.medusa, source:d.source, counts:{ categories:d.cats.length, products:d.prods.length }, fallback:{ catsFile:CATS_FILE, prodsFile:PRODS_FILE } })
+73:  if (p === '/api/categories') return send(res, 200, d.cats)
+74:  if (p === '/api/products') return send(res, 200, d.prods)
+90:    const list = d.prods.filter(x => x.product_category_id === catId || x.categoryId === catId || x.categoryHandle === catId)
+
+================================================================
+## INDEX.HTML
+
+PATH: /Users/a1111/projects/namelaka-stage1/app/index.html
+BYTES: 520
+
+<!doctype html>
+<html lang="uk">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Namelaka Stage 1</title>
+
+    <!-- Оригинальные стили Namelaka (из public) -->
+    <link rel="stylesheet" href="/original/ua/styles-ZBSN6PDF.css" />
+    <link rel="stylesheet" href="/original/ua/original-components.css" />
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>
+
+================================================================
+## SRC MAIN.JSX
+
+PATH: /Users/a1111/projects/namelaka-stage1/app/src/main.jsx
+BYTES: 235
+
+import React from 'react'
+import ReactDOM from 'react-dom/client'
+import App from './App.jsx'
+import './styles.css'
+
+ReactDOM.createRoot(document.getElementById('root')).render(
+  <React.StrictMode>
+    <App />
+  </React.StrictMode>
+)
+
+================================================================
+## FRONTEND API FILES (getCategories/getProducts/readJson)
+
+PATTERN: getCategories|getProducts|readJson\(
+
+----- /Users/a1111/projects/namelaka-stage1/app/src/api.js -----
+const API_BASE = (import.meta.env.VITE_STAGE1_API_BASE || '').replace(/\/$/, '')
+
+function apiUrl(path) {
+  if (!API_BASE) return path
+  return `${API_BASE}${path}`
+}
+
+async function readJson(path) {
+  const res = await fetch(apiUrl(path), {
+    headers: { Accept: 'application/json' },
+    cache: 'no-store',
+  })
+  if (!res.ok) {
+    const text = await res.text().catch(() => '')
+    throw new Error(`API ${path} -> ${res.status} ${res.statusText} ${text}`.trim())
+  }
+  return res.json()
+}
+
+export async function getCategories() {
+  return readJson('/api/categories')
+}
+
+export async function getProducts() {
+  return readJson('/api/products')
+}
+
+export async function getProductById(id) {
+  return readJson(`/api/products/${encodeURIComponent(id)}`)
+}
+
+export async function getProductsByCategory(categoryId) {
+  return readJson(`/api/${encodeURIComponent(categoryId)}/products`)
+}
+
+----- /Users/a1111/projects/namelaka-stage1/app/src/App.jsx -----
+import React from 'react'
+import * as Pages from './pages.jsx'
+import { getCategories, getProducts } from './api.js'
+import { normalizeCategory, normalizeProduct } from './lib/normalizeProduct.js'
+import { loadOriginalSnapshot } from './lib/originalSnapshot.js'
+
+function parseRoute() {
+  const url = new URL(window.location.href)
+  const parts = url.pathname.replace(/\/+$/, '').split('/').filter(Boolean)
+
+  let locale = 'uk'
+  let rest = parts
+
+  if (parts[0] === 'ua' || parts[0] === 'en') {
+    locale = parts[0] === 'ua' ? 'uk' : 'en'
+    rest = parts.slice(1)
+  }
+
+  if (rest.length === 0) return { type: 'home', locale }
+
+  if (rest[0] === 'catalog') return { type: 'catalog', locale }
+  if (rest[0] === 'category' && rest[1]) return { type: 'category', locale, categoryId: decodeURIComponent(rest[1]) }
+  if (rest[0] === 'product' && rest[1]) return { type: 'product', locale, productId: decodeURIComponent(rest[1]) }
+  if (rest[0] === 'search') return { type: 'search', locale, query: url.searchParams.get('q') || '' }
+
+  return { type: 'notfound', locale }
+}
+
+export default function App() {
+  const [route, setRoute] = React.useState(() => parseRoute())
+  const [loading, setLoading] = React.useState(true)
+  const [error, setError] = React.useState('')
+  const [snapshot, setSnapshot] = React.useState({ headerHtml: '', categoriesHtml: '', demoCards: [] })
+  const [categories, setCategories] = React.useState([])
+  const [products, setProducts] = React.useState([])
+
+  React.useEffect(() => {
+    const onNav = () => setRoute(parseRoute())
+    window.addEventListener('popstate', onNav)
+
+    const onClick = (e) => {
+      const a = e.target.closest('a[href]')
+      if (!a) return
+      const href = a.getAttribute('href') || ''
+      if (!href.startsWith('/')) return
+      if (a.target === '_blank') return
+      e.preventDefault()
+      window.history.pushState({}, '', href)
+      setRoute(parseRoute())
+    }
+
+    document.addEventListener('click', onClick)
+    return () => {
+      window.removeEventListener('popstate', onNav)
+      document.removeEventListener('click', onClick)
+    }
+  }, [])
+
+  React.useEffect(() => {
+    let cancelled = false
+
+    async function boot() {
+      try {
+        setLoading(true)
+        setError('')
+
+        const [snap, catsRaw, prodsRaw] = await Promise.all([
+          loadOriginalSnapshot(),
+          getCategories(),
+          getProducts(),
+        ])
+
+        if (cancelled) return
+
+        const cats = Array.isArray(catsRaw) ? catsRaw.map(normalizeCategory) : []
+        const demoCards = Array.isArray(snap?.demoCards) ? snap.demoCards : []
+        const prods = Array.isArray(prodsRaw)
+          ? prodsRaw.map((p, i) => normalizeProduct(p, i, demoCards[i] || demoCards[i % Math.max(demoCards.length, 1)] || null))
+          : []
+
+        setSnapshot(snap)
+        setCategories(cats.sort((a, b) => a.rank - b.rank))
+        setProducts(prods)
+      } catch (err) {
+        console.error(err)
+        if (!cancelled) setError(err?.message || 'Failed to load stage1 data')
+      } finally {
+        if (!cancelled) setLoading(false)
+      }
+    }
+
+    boot()
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  if (loading) {
+    return <div className="stage1-boot">Loading…</div>
+  }
+
+  if (error) {
+    return <div className="stage1-boot stage1-error">{error}</div>
+  }
+
+  const common = { locale: route.locale, snapshot, categories, products }
+
+  if (route.type === 'home') {
+    return <Pages.HomePage {...common} />
+  }
+
+  if (route.type === 'catalog') {
+    return <Pages.CatalogPage {...common} />
+  }
+
+  if (route.type === 'category') {
+    return <Pages.CategoryPage {...common} categoryId={route.categoryId} />
+  }
+
+  if (route.type === 'product') {
+    return <Pages.ProductPage {...common} productId={route.productId} />
+  }
+
+  if (route.type === 'search') {
+    return <Pages.SearchPage {...common} query={route.query} />
+  }
+
+  return <Pages.NotFoundPage {...common} />
+}
+
+
+================================================================
+## FRONTEND PRODUCT MAPPER FILES (product_category_id/category_id/metadata.category_id)
+
+PATTERN: product_category_id|category_id|metadata\?\.category_id
+
+----- /Users/a1111/projects/namelaka-stage1/app/src/lib/normalizeProduct.ts -----
+type AnyObj = Record<string, any>
+
+function asObj(input: unknown): AnyObj {
+  return input && typeof input === 'object' ? (input as AnyObj) : {}
+}
+
+function str(v: unknown): string {
+  if (typeof v === 'string') return v.trim()
+  if (typeof v === 'number' && Number.isFinite(v)) return String(v)
+  return ''
+}
+
+function num(v: unknown): number | null {
+  if (typeof v === 'number' && Number.isFinite(v)) return v
+  if (typeof v === 'string') {
+    const n = Number(v.replace(',', '.').replace(/[^\d.-]/g, ''))
+    return Number.isFinite(n) ? n : null
+  }
+  return null
+}
+
+function firstNonEmpty(...values: unknown[]): string {
+  for (const v of values) {
+    const s = str(v)
+    if (s) return s
+  }
+  return ''
+}
+
+function flattenImages(input: any): string[] {
+  if (!input) return []
+  const out: string[] = []
+
+  const pushIf = (v: unknown) => {
+    const s = str(v)
+    if (s) out.push(s)
+  }
+
+  if (Array.isArray(input)) {
+    for (const item of input) {
+      if (typeof item === 'string') pushIf(item)
+      else if (item && typeof item === 'object') {
+        pushIf((item as AnyObj).url)
+        pushIf((item as AnyObj).src)
+        pushIf((item as AnyObj).original)
+        pushIf((item as AnyObj).thumbnail)
+        pushIf((item as AnyObj).image)
+      }
+    }
+    return [...new Set(out)]
+  }
+
+  if (typeof input === 'object') {
+    const obj = input as AnyObj
+    pushIf(obj.url)
+    pushIf(obj.src)
+    pushIf(obj.original)
+    pushIf(obj.thumbnail)
+    pushIf(obj.image)
+    if (Array.isArray(obj.images)) return [...new Set([...out, ...flattenImages(obj.images)])]
+    if (Array.isArray(obj.gallery)) return [...new Set([...out, ...flattenImages(obj.gallery)])]
+  }
+
+  return [...new Set(out)]
+}
+
+function pickPrice(obj: AnyObj): number | null {
+  const candidates = [
+    obj.price,
+    obj.sale_price,
+    obj.salePrice,
+    obj.final_price,
+    obj.finalPrice,
+    obj.amount,
+    obj.cost,
+    obj.min_price,
+    obj.minPrice,
+  ]
+  for (const c of candidates) {
+    const n = num(c)
+    if (n !== null) return n
+  }
+
+  // common nested price shapes
+  if (obj.prices && typeof obj.prices === 'object') {
+    const po = obj.prices as AnyObj
+    const nested = [
+      po.price,
+      po.amount,
+      po.value,
+      po.uah,
+      po.UAH,
+      po.current,
+      po.default,
+    ]
+    for (const c of nested) {
+      const n = num(c)
+      if (n !== null) return n
+    }
+  }
+
+  return null
+}
+
+function pickCurrency(obj: AnyObj): string {
+  return (
+    firstNonEmpty(
+      obj.currency,
+      obj.currency_code,
+      obj.currencyCode,
+      obj?.prices?.currency,
+      obj?.prices?.currency_code,
+      obj?.prices?.currencyCode
+    ) || 'UAH'
+  ).toUpperCase()
+}
+
+function pickCategoryId(obj: AnyObj): string | null {
+  const direct = firstNonEmpty(
+    obj.category_id,
+    obj.categoryId,
+    obj.category?.id,
+    obj.collection_id,
+    obj.collectionId,
+    obj.group_id,
+    obj.groupId
+  )
+  return direct || null
+}
+
+function pickCategoryTitle(obj: AnyObj): string | null {
+  const t = firstNonEmpty(
+    obj.category_name,
+    obj.categoryName,
+    obj.category?.name,
+    obj.category?.title,
+    obj.collection_name,
+    obj.collectionName,
+    obj.group_name,
+    obj.groupName
+  )
+  return t || null
+}
+
+export function normalizeProduct(input: unknown) {
+  const obj = asObj(input)
+
+  const id =
+    firstNonEmpty(
+      obj.id,
+      obj._id,
+      obj.uuid,
+      obj.slug,
+      obj.handle,
+      obj.code,
+      obj.sku
+    ) || cryptoRandomFallback()
+
+  const title =
+    firstNonEmpty(
+      obj.title,
+      obj.name,
+      obj.product_name,
+      obj.productName,
+      obj.label
+    ) || 'Товар'
+
+  const description =
+    firstNonEmpty(
+      obj.description,
+      obj.desc,
+      obj.short_description,
+      obj.shortDescription,
+      obj.content,
+      obj.body
+    ) || ''
+
+  const images = [
+    ...flattenImages(obj.images),
+    ...flattenImages(obj.gallery),
+    ...flattenImages(obj.media),
+    ...flattenImages(obj.photos),
+    ...flattenImages(obj.image),
+    ...flattenImages(obj.thumbnail),
+    ...flattenImages(obj.cover),
+  ].filter(Boolean)
+
+  const uniqueImages = [...new Set(images)]
+
+  const image =
+    firstNonEmpty(
+      obj.image,
+      obj.thumbnail,
+      obj.cover,
+      uniqueImages[0]
+    ) || null
+
+  const activeRaw = obj.is_active ?? obj.active ?? obj.enabled ?? obj.status
+  const isActive =
+    typeof activeRaw === 'boolean'
+      ? activeRaw
+      : typeof activeRaw === 'number'
+        ? activeRaw !== 0
+        : typeof activeRaw === 'string'
+          ? !['0', 'false', 'disabled', 'inactive', 'draft'].includes(activeRaw.toLowerCase())
+          : true
+
+  return {
+    raw: obj,
+    id,
+    slug: firstNonEmpty(obj.slug, obj.handle) || id,
+    title,
+    description,
+    image,
+    images: uniqueImages,
+    price: pickPrice(obj),
+    currency: pickCurrency(obj),
+    categoryId: pickCategoryId(obj),
+    categoryTitle: pickCategoryTitle(obj),
+    sku: firstNonEmpty(obj.sku, obj.code) || null,
+    isActive,
+  }
+}
+
+export function normalizeProducts(input: unknown): ReturnType<typeof normalizeProduct>[] {
+  if (!input) return []
+
+  let list: unknown[] = []
+
+  if (Array.isArray(input)) {
+    list = input
+  } else if (typeof input === 'object') {
+    const obj = input as AnyObj
+    list =
+      Array.isArray(obj.items) ? obj.items :
+      Array.isArray(obj.products) ? obj.products :
+      Array.isArray(obj.data) ? obj.data :
+      Array.isArray(obj.results) ? obj.results :
+      Array.isArray(obj.rows) ? obj.rows :
+      []
+  }
+
+  return list.map(normalizeProduct).filter((p) => p && p.id)
+}
+
+export function normalizeCategory(input: unknown) {
+  const obj = asObj(input)
+
+  const id =
+    firstNonEmpty(
+      obj.id,
+      obj._id,
+      obj.slug,
+      obj.handle,
+      obj.code,
+      obj.key
+    ) || cryptoRandomFallback()
+
+  const title =
+    firstNonEmpty(
+
+----- /Users/a1111/projects/namelaka-stage1/app/src/lib/normalizeProduct.js -----
+function firstImage(images) {
+  if (!Array.isArray(images) || images.length === 0) return null
+  const x = images[0]
+  if (!x) return null
+  if (typeof x === 'string') return x
+  return x.url || x.src || null
+}
+
+function formatPriceUA(value) {
+  if (value == null || Number.isNaN(Number(value))) return null
+  return `₴ ${Math.round(Number(value))}`
+}
+
+export function normalizeCategory(cat, index = 0) {
+  const handle = cat?.handle || `category-${index + 1}`
+  return {
+    id: cat?.id || handle,
+    handle,
+    name: cat?.name || handle,
+    description: cat?.description || '',
+    rank: Number.isFinite(cat?.rank) ? cat.rank : index,
+    images: Array.isArray(cat?.images) ? cat.images : [],
+  }
+}
+
+export function normalizeProduct(raw, index = 0, demo = null) {
+  const priceFromRaw =
+    raw?.price ??
+    raw?.calculated_price ??
+    raw?.variants?.[0]?.calculated_price?.calculated_amount ??
+    raw?.variants?.[0]?.prices?.[0]?.amount ??
+    null
+
+  const title = raw?.title || raw?.name || demo?.title || `Product ${index + 1}`
+  const description =
+    raw?.description ||
+    raw?.subtitle ||
+    raw?.short_description ||
+    demo?.description ||
+    ''
+
+  const image =
+    raw?.thumbnail ||
+    firstImage(raw?.images) ||
+    demo?.image ||
+    null
+
+  const heartsRaw = raw?.hearts ?? raw?.metadata?.hearts ?? demo?.hearts ?? 0
+  const hearts = Number.parseInt(String(heartsRaw).replace(/[^\d]/g, ''), 10) || 0
+
+  const priceText =
+    formatPriceUA(priceFromRaw) ||
+    raw?.price_text ||
+    demo?.priceText ||
+    ''
+
+  return {
+    id: raw?.id || `demo-${index + 1}`,
+    handle: raw?.handle || `product-${index + 1}`,
+    title,
+    description,
+    image,
+    hearts,
+    priceText,
+    oldPriceText: raw?.oldPrice ? formatPriceUA(raw.oldPrice) : '',
+    categoryId:
+      raw?.product_category_id ||
+      raw?.category_id ||
+      raw?.metadata?.category_id ||
+      null,
+    raw,
+  }
+}
+
+
+================================================================
+## FRONTEND SNAPSHOT LOADER (ua-home-app-root)
+
+PATTERN: ua-home-app-root\.html|loadFromString|snapshot
+
+----- /Users/a1111/projects/namelaka-stage1/app/src/lib/originalSnapshot.js -----
+let snapshotPromise = null
+
+function toAbsoluteAsset(url) {
+  if (!url) return url
+  if (/^https?:\/\//i.test(url)) return url
+  if (url.startsWith('//')) return `https:${url}`
+  if (url.startsWith('/')) return `https://namelaka.ua${url}`
+  if (url.startsWith('assets/')) return `https://namelaka.ua/ua/${url}`
+  return url
+}
+
+function patchFragmentHtml(html) {
+  if (!html) return ''
+  return html
+    .replace(/src="assets\//g, 'src="https://namelaka.ua/ua/assets/')
+    .replace(/href="assets\//g, 'href="https://namelaka.ua/ua/assets/')
+    .replace(/routerlink="/g, 'data-routerlink="')
+}
+
+function text(el, selector) {
+  const x = el.querySelector(selector)
+  return x ? x.textContent.trim() : ''
+}
+
+function loadFromString(htmlText) {
+  const doc = new DOMParser().parseFromString(htmlText, 'text/html')
+  const appRoot = doc.querySelector('app-root') || doc.body
+
+  const header = appRoot.querySelector('app-header')
+  const categories = appRoot.querySelector('app-categories')
+
+  const demoCards = Array.from(appRoot.querySelectorAll('app-catalog app-product-card')).map((card, idx) => {
+    const img = card.querySelector('.image img')
+    const title = text(card, '.info h1') || text(card, 'h1')
+    const priceText = text(card, '.price')
+    const hearts = text(card, '.counter span') || text(card, '.counter')
+    return {
+      index: idx,
+      title,
+      image: toAbsoluteAsset(img?.getAttribute('src') || ''),
+      priceText,
+      hearts,
+      description: '',
+    }
+  })
+
+  return {
+    headerHtml: patchFragmentHtml(header?.outerHTML || ''),
+    categoriesHtml: patchFragmentHtml(categories?.outerHTML || ''),
+    demoCards,
+  }
+}
+
+export async function loadOriginalSnapshot() {
+  if (snapshotPromise) return snapshotPromise
+
+  snapshotPromise = fetch('/original/ua/ua-home-app-root.html', { cache: 'no-store' })
+    .then(async (res) => {
+      if (!res.ok) throw new Error(`Snapshot fetch failed: ${res.status}`)
+      const html = await res.text()
+      return loadFromString(html)
+    })
+    .catch((err) => {
+      console.error('Failed to load original snapshot', err)
+      return {
+        headerHtml: '',
+        categoriesHtml: '',
+        demoCards: [],
+      }
+    })
+
+  return snapshotPromise
+}
+
+----- /Users/a1111/projects/namelaka-stage1/app/src/App.jsx -----
+import React from 'react'
+import * as Pages from './pages.jsx'
+import { getCategories, getProducts } from './api.js'
+import { normalizeCategory, normalizeProduct } from './lib/normalizeProduct.js'
+import { loadOriginalSnapshot } from './lib/originalSnapshot.js'
+
+function parseRoute() {
+  const url = new URL(window.location.href)
+  const parts = url.pathname.replace(/\/+$/, '').split('/').filter(Boolean)
+
+  let locale = 'uk'
+  let rest = parts
+
+  if (parts[0] === 'ua' || parts[0] === 'en') {
+    locale = parts[0] === 'ua' ? 'uk' : 'en'
+    rest = parts.slice(1)
+  }
+
+  if (rest.length === 0) return { type: 'home', locale }
+
+  if (rest[0] === 'catalog') return { type: 'catalog', locale }
+  if (rest[0] === 'category' && rest[1]) return { type: 'category', locale, categoryId: decodeURIComponent(rest[1]) }
+  if (rest[0] === 'product' && rest[1]) return { type: 'product', locale, productId: decodeURIComponent(rest[1]) }
+  if (rest[0] === 'search') return { type: 'search', locale, query: url.searchParams.get('q') || '' }
+
+  return { type: 'notfound', locale }
+}
+
+export default function App() {
+  const [route, setRoute] = React.useState(() => parseRoute())
+  const [loading, setLoading] = React.useState(true)
+  const [error, setError] = React.useState('')
+  const [snapshot, setSnapshot] = React.useState({ headerHtml: '', categoriesHtml: '', demoCards: [] })
+  const [categories, setCategories] = React.useState([])
+  const [products, setProducts] = React.useState([])
+
+  React.useEffect(() => {
+    const onNav = () => setRoute(parseRoute())
+    window.addEventListener('popstate', onNav)
+
+    const onClick = (e) => {
+      const a = e.target.closest('a[href]')
+      if (!a) return
+      const href = a.getAttribute('href') || ''
+      if (!href.startsWith('/')) return
+      if (a.target === '_blank') return
+      e.preventDefault()
+      window.history.pushState({}, '', href)
+      setRoute(parseRoute())
+    }
+
+    document.addEventListener('click', onClick)
+    return () => {
+      window.removeEventListener('popstate', onNav)
+      document.removeEventListener('click', onClick)
+    }
+  }, [])
+
+  React.useEffect(() => {
+    let cancelled = false
+
+    async function boot() {
+      try {
+        setLoading(true)
+        setError('')
+
+        const [snap, catsRaw, prodsRaw] = await Promise.all([
+          loadOriginalSnapshot(),
+          getCategories(),
+          getProducts(),
+        ])
+
+        if (cancelled) return
+
+        const cats = Array.isArray(catsRaw) ? catsRaw.map(normalizeCategory) : []
+        const demoCards = Array.isArray(snap?.demoCards) ? snap.demoCards : []
+        const prods = Array.isArray(prodsRaw)
+          ? prodsRaw.map((p, i) => normalizeProduct(p, i, demoCards[i] || demoCards[i % Math.max(demoCards.length, 1)] || null))
+          : []
+
+        setSnapshot(snap)
+        setCategories(cats.sort((a, b) => a.rank - b.rank))
+        setProducts(prods)
+      } catch (err) {
+        console.error(err)
+        if (!cancelled) setError(err?.message || 'Failed to load stage1 data')
+      } finally {
+        if (!cancelled) setLoading(false)
+      }
+    }
+
+    boot()
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  if (loading) {
+    return <div className="stage1-boot">Loading…</div>
+  }
+
+  if (error) {
+    return <div className="stage1-boot stage1-error">{error}</div>
+  }
+
+  const common = { locale: route.locale, snapshot, categories, products }
+
+  if (route.type === 'home') {
+    return <Pages.HomePage {...common} />
+  }
+
+  if (route.type === 'catalog') {
+    return <Pages.CatalogPage {...common} />
+  }
+
+  if (route.type === 'category') {
+    return <Pages.CategoryPage {...common} categoryId={route.categoryId} />
+  }
+
+  if (route.type === 'product') {
+    return <Pages.ProductPage {...common} productId={route.productId} />
+  }
+
+  if (route.type === 'search') {
+    return <Pages.SearchPage {...common} query={route.query} />
+  }
+
+  return <Pages.NotFoundPage {...common} />
+}
+
+----- /Users/a1111/projects/namelaka-stage1/app/src/pages.jsx -----
+import React from 'react'
+import ProductGrid from './components/ProductGrid.jsx'
+
+function t(locale, uk, en) {
+  return locale === 'en' ? en : uk
+}
+
+function slugOrIdMatch(routeValue, category) {
+  if (!routeValue || !category) return false
+  return routeValue === category.id || routeValue === category.handle
+}
+
+function renderOriginalFragment(html) {
+  if (!html) return null
+  return <div dangerouslySetInnerHTML={{ __html: html }} />
+}
+
+export function PageShell({
+  locale = 'uk',
+  snapshot,
+  children,
+}) {
+  return (
+    <>
+      {renderOriginalFragment(snapshot?.headerHtml)}
+      {renderOriginalFragment(snapshot?.categoriesHtml)}
+      <div className="stage1-page-content">
+        {children}
+      </div>
+    </>
+  )
+}
+
+export function HomePage({ locale = 'uk', products = [], snapshot }) {
+  return (
+    <PageShell locale={locale} snapshot={snapshot}>
+      <app-catalog>
+        <ProductGrid
+          locale={locale}
+          products={products}
+          emptyText={t(locale, 'Товарів поки немає', 'No products yet')}
+        />
+      </app-catalog>
+    </PageShell>
+  )
+}
+
+export function CatalogPage({ locale = 'uk', products = [], snapshot }) {
+  return (
+    <PageShell locale={locale} snapshot={snapshot}>
+      <div className="stage1-title-wrap">
+        <h1>{t(locale, 'Каталог', 'Catalog')}</h1>
+      </div>
+      <app-catalog>
+        <ProductGrid
+          locale={locale}
+          products={products}
+          emptyText={t(locale, 'Товарів поки немає', 'No products yet')}
+        />
+      </app-catalog>
+    </PageShell>
+  )
+}
+
+export function CategoryPage({
+  locale = 'uk',
+  categoryId,
+  categories = [],
+  products = [],
+  snapshot,
+}) {
+  const category = categories.find((c) => slugOrIdMatch(categoryId, c))
+  const filtered = category
+    ? products.filter((p) => !p.categoryId || p.categoryId === category.id)
+    : []
+
+  return (
+    <PageShell locale={locale} snapshot={snapshot}>
+      <div className="stage1-title-wrap">
+        <h1>{category ? category.name : t(locale, 'Категорія не знайдена', 'Category not found')}</h1>
+      </div>
+
+      {category ? (
+        <app-catalog>
+          <ProductGrid
+            locale={locale}
+            products={filtered}
+            emptyText={t(
+              locale,
+              'У цій категорії поки немає товарів',
+              'No products in this category yet'
+            )}
+          />
+        </app-catalog>
+      ) : (
+        <div className="stage1-empty">
+          {t(locale, 'Перевірте адресу категорії', 'Check the category URL')}
+        </div>
+      )}
+    </PageShell>
+  )
+}
+
+export function ProductPage({
+  locale = 'uk',
+  productId,
+  products = [],
+  snapshot,
+}) {
+  const product = products.find((p) => p.id === productId || p.handle === productId)
+
+  if (!product) {
+    return (
+      <PageShell locale={locale} snapshot={snapshot}>
+        <div className="stage1-empty">
+          {t(locale, 'Товар не знайдено', 'Product not found')}
+        </div>
+      </PageShell>
+    )
+  }
+
+  return (
+    <PageShell locale={locale} snapshot={snapshot}>
+      <div className="stage1-product-page">
+        <div className="stage1-product-media">
+          {product.image ? (
+            <img src={product.image} alt={product.title} />
+          ) : (
+            <div className="stage1-image-fallback stage1-image-fallback-large">No image</div>
+          )}
+        </div>
+
+        <div className="stage1-product-info">
+          <h1>{product.title}</h1>
+          <div className="stage1-product-price">{product.priceText || '—'}</div>
+          {product.description ? <p>{product.description}</p> : null}
+
+          <div className="stage1-actions">
+            <a href={`/${locale}/catalog`} className="stage1-btn">
+              {t(locale, 'Назад до каталогу', 'Back to catalog')}
+            </a>
+          </div>
+        </div>
+      </div>
+    </PageShell>
+  )
+}
+
+export function SearchPage({ locale = 'uk', query = '', products = [], snapshot }) {
+  const q = String(query || '').trim().toLowerCase()
+  const filtered = !q
+    ? []
+    : products.filter((p) =>
+        `${p.title} ${p.description}`.toLowerCase().includes(q)
+      )
+
+  return (
+    <PageShell locale={locale} snapshot={snapshot}>
+      <div className="stage1-title-wrap">
+        <h1>
+          {t(locale, 'Пошук', 'Search')}
+          {q ? `: ${q}` : ''}
+        </h1>
+      </div>
+
+      <app-catalog>
+        <ProductGrid
+          locale={locale}
+          products={filtered}
+          emptyText={t(locale, 'Нічого не знайдено', 'Nothing found')}
+        />
+      </app-catalog>
+    </PageShell>
+  )
+}
+
+export function NotFoundPage({ locale = 'uk', snapshot }) {
+  return (
+    <PageShell locale={locale} snapshot={snapshot}>
+      <div className="stage1-empty">
+        {t(locale, 'Сторінку не знайдено', 'Page not found')}
+      </div>
+    </PageShell>
+  )
+}
+
+export default {
+  HomePage,
+  CatalogPage,
+  CategoryPage,
+  ProductPage,
+  SearchPage,
+  NotFoundPage,
+}
+
+
+================================================================
+## FRONTEND CATEGORY FILTER LOGIC (getProductsByCategory/filter)
+
+PATTERN: getProductsByCategory|filter\(|categoryId
+
+----- /Users/a1111/projects/namelaka-stage1/app/src/api.js -----
+const API_BASE = (import.meta.env.VITE_STAGE1_API_BASE || '').replace(/\/$/, '')
+
+function apiUrl(path) {
+  if (!API_BASE) return path
+  return `${API_BASE}${path}`
+}
+
+async function readJson(path) {
+  const res = await fetch(apiUrl(path), {
+    headers: { Accept: 'application/json' },
+    cache: 'no-store',
+  })
+  if (!res.ok) {
+    const text = await res.text().catch(() => '')
+    throw new Error(`API ${path} -> ${res.status} ${res.statusText} ${text}`.trim())
+  }
+  return res.json()
+}
+
+export async function getCategories() {
+  return readJson('/api/categories')
+}
+
+export async function getProducts() {
+  return readJson('/api/products')
+}
+
+export async function getProductById(id) {
+  return readJson(`/api/products/${encodeURIComponent(id)}`)
+}
+
+export async function getProductsByCategory(categoryId) {
+  return readJson(`/api/${encodeURIComponent(categoryId)}/products`)
+}
+
+----- /Users/a1111/projects/namelaka-stage1/app/src/utils.js -----
+export function formatPrice(v, locale = 'uk-UA') {
+  if (v == null || Number.isNaN(Number(v))) return '₴ —'
+  return `₴ ${new Intl.NumberFormat(locale).format(Math.round(Number(v)))}`
+}
+
+export function getLocaleFromPath(pathname) {
+  const seg = pathname.split('/').filter(Boolean)[0]
+  return seg === 'en' ? 'en' : 'ua'
+}
+
+export function stripLocale(pathname) {
+  const parts = pathname.split('/').filter(Boolean)
+  if (parts[0] === 'ua' || parts[0] === 'en') parts.shift()
+  return '/' + parts.join('/')
+}
+
+export function withLocale(locale, path) {
+  const p = path.startsWith('/') ? path : `/${path}`
+  return `/${locale}${p === '/' ? '/' : p}`
+}
+
+----- /Users/a1111/projects/namelaka-stage1/app/src/lib/normalizeProduct.ts -----
+type AnyObj = Record<string, any>
+
+function asObj(input: unknown): AnyObj {
+  return input && typeof input === 'object' ? (input as AnyObj) : {}
+}
+
+function str(v: unknown): string {
+  if (typeof v === 'string') return v.trim()
+  if (typeof v === 'number' && Number.isFinite(v)) return String(v)
+  return ''
+}
+
+function num(v: unknown): number | null {
+  if (typeof v === 'number' && Number.isFinite(v)) return v
+  if (typeof v === 'string') {
+    const n = Number(v.replace(',', '.').replace(/[^\d.-]/g, ''))
+    return Number.isFinite(n) ? n : null
+  }
+  return null
+}
+
+function firstNonEmpty(...values: unknown[]): string {
+  for (const v of values) {
+    const s = str(v)
+    if (s) return s
+  }
+  return ''
+}
+
+function flattenImages(input: any): string[] {
+  if (!input) return []
+  const out: string[] = []
+
+  const pushIf = (v: unknown) => {
+    const s = str(v)
+    if (s) out.push(s)
+  }
+
+  if (Array.isArray(input)) {
+    for (const item of input) {
+      if (typeof item === 'string') pushIf(item)
+      else if (item && typeof item === 'object') {
+        pushIf((item as AnyObj).url)
+        pushIf((item as AnyObj).src)
+        pushIf((item as AnyObj).original)
+        pushIf((item as AnyObj).thumbnail)
+        pushIf((item as AnyObj).image)
+      }
+    }
+    return [...new Set(out)]
+  }
+
+  if (typeof input === 'object') {
+    const obj = input as AnyObj
+    pushIf(obj.url)
+    pushIf(obj.src)
+    pushIf(obj.original)
+    pushIf(obj.thumbnail)
+    pushIf(obj.image)
+    if (Array.isArray(obj.images)) return [...new Set([...out, ...flattenImages(obj.images)])]
+    if (Array.isArray(obj.gallery)) return [...new Set([...out, ...flattenImages(obj.gallery)])]
+  }
+
+  return [...new Set(out)]
+}
+
+function pickPrice(obj: AnyObj): number | null {
+  const candidates = [
+    obj.price,
+    obj.sale_price,
+    obj.salePrice,
+    obj.final_price,
+    obj.finalPrice,
+    obj.amount,
+    obj.cost,
+    obj.min_price,
+    obj.minPrice,
+  ]
+  for (const c of candidates) {
+    const n = num(c)
+    if (n !== null) return n
+  }
+
+  // common nested price shapes
+  if (obj.prices && typeof obj.prices === 'object') {
+    const po = obj.prices as AnyObj
+    const nested = [
+      po.price,
+      po.amount,
+      po.value,
+      po.uah,
+      po.UAH,
+      po.current,
+      po.default,
+    ]
+    for (const c of nested) {
+      const n = num(c)
+      if (n !== null) return n
+    }
+  }
+
+  return null
+}
+
+function pickCurrency(obj: AnyObj): string {
+  return (
+    firstNonEmpty(
+      obj.currency,
+      obj.currency_code,
+      obj.currencyCode,
+      obj?.prices?.currency,
+      obj?.prices?.currency_code,
+      obj?.prices?.currencyCode
+    ) || 'UAH'
+  ).toUpperCase()
+}
+
+function pickCategoryId(obj: AnyObj): string | null {
+  const direct = firstNonEmpty(
+    obj.category_id,
+    obj.categoryId,
+    obj.category?.id,
+    obj.collection_id,
+    obj.collectionId,
+    obj.group_id,
+    obj.groupId
+  )
+  return direct || null
+}
+
+function pickCategoryTitle(obj: AnyObj): string | null {
+  const t = firstNonEmpty(
+    obj.category_name,
+    obj.categoryName,
+    obj.category?.name,
+    obj.category?.title,
+    obj.collection_name,
+    obj.collectionName,
+    obj.group_name,
+    obj.groupName
+  )
+  return t || null
+}
+
+export function normalizeProduct(input: unknown) {
+  const obj = asObj(input)
+
+  const id =
+    firstNonEmpty(
+      obj.id,
+      obj._id,
+      obj.uuid,
+      obj.slug,
+      obj.handle,
+      obj.code,
+      obj.sku
+    ) || cryptoRandomFallback()
+
+  const title =
+    firstNonEmpty(
+      obj.title,
+      obj.name,
+      obj.product_name,
+      obj.productName,
+      obj.label
+    ) || 'Товар'
+
+  const description =
+    firstNonEmpty(
+      obj.description,
+      obj.desc,
+      obj.short_description,
+      obj.shortDescription,
+      obj.content,
+      obj.body
+    ) || ''
+
+  const images = [
+    ...flattenImages(obj.images),
+    ...flattenImages(obj.gallery),
+    ...flattenImages(obj.media),
+    ...flattenImages(obj.photos),
+    ...flattenImages(obj.image),
+    ...flattenImages(obj.thumbnail),
+    ...flattenImages(obj.cover),
+  ].filter(Boolean)
+
+  const uniqueImages = [...new Set(images)]
+
+  const image =
+    firstNonEmpty(
+      obj.image,
+      obj.thumbnail,
+      obj.cover,
+      uniqueImages[0]
+    ) || null
+
+  const activeRaw = obj.is_active ?? obj.active ?? obj.enabled ?? obj.status
+  const isActive =
+    typeof activeRaw === 'boolean'
+      ? activeRaw
+      : typeof activeRaw === 'number'
+        ? activeRaw !== 0
+        : typeof activeRaw === 'string'
+          ? !['0', 'false', 'disabled', 'inactive', 'draft'].includes(activeRaw.toLowerCase())
+          : true
+
+  return {
+    raw: obj,
+    id,
+    slug: firstNonEmpty(obj.slug, obj.handle) || id,
+    title,
+    description,
+    image,
+    images: uniqueImages,
+    price: pickPrice(obj),
+    currency: pickCurrency(obj),
+    categoryId: pickCategoryId(obj),
+    categoryTitle: pickCategoryTitle(obj),
+    sku: firstNonEmpty(obj.sku, obj.code) || null,
+    isActive,
+  }
+}
+
+export function normalizeProducts(input: unknown): ReturnType<typeof normalizeProduct>[] {
+  if (!input) return []
+
+  let list: unknown[] = []
+
+  if (Array.isArray(input)) {
+    list = input
+  } else if (typeof input === 'object') {
+    const obj = input as AnyObj
+    list =
+      Array.isArray(obj.items) ? obj.items :
+      Array.isArray(obj.products) ? obj.products :
+      Array.isArray(obj.data) ? obj.data :
+      Array.isArray(obj.results) ? obj.results :
+      Array.isArray(obj.rows) ? obj.rows :
+      []
+  }
+
+  return list.map(normalizeProduct).filter((p) => p && p.id)
+}
+
+export function normalizeCategory(input: unknown) {
+  const obj = asObj(input)
+
+  const id =
+    firstNonEmpty(
+      obj.id,
+      obj._id,
+      obj.slug,
+      obj.handle,
+      obj.code,
+      obj.key
+    ) || cryptoRandomFallback()
+
+  const title =
+    firstNonEmpty(
+
+----- /Users/a1111/projects/namelaka-stage1/app/src/lib/normalizeProduct.js -----
+function firstImage(images) {
+  if (!Array.isArray(images) || images.length === 0) return null
+  const x = images[0]
+  if (!x) return null
+  if (typeof x === 'string') return x
+  return x.url || x.src || null
+}
+
+function formatPriceUA(value) {
+  if (value == null || Number.isNaN(Number(value))) return null
+  return `₴ ${Math.round(Number(value))}`
+}
+
+export function normalizeCategory(cat, index = 0) {
+  const handle = cat?.handle || `category-${index + 1}`
+  return {
+    id: cat?.id || handle,
+    handle,
+    name: cat?.name || handle,
+    description: cat?.description || '',
+    rank: Number.isFinite(cat?.rank) ? cat.rank : index,
+    images: Array.isArray(cat?.images) ? cat.images : [],
+  }
+}
+
+export function normalizeProduct(raw, index = 0, demo = null) {
+  const priceFromRaw =
+    raw?.price ??
+    raw?.calculated_price ??
+    raw?.variants?.[0]?.calculated_price?.calculated_amount ??
+    raw?.variants?.[0]?.prices?.[0]?.amount ??
+    null
+
+  const title = raw?.title || raw?.name || demo?.title || `Product ${index + 1}`
+  const description =
+    raw?.description ||
+    raw?.subtitle ||
+    raw?.short_description ||
+    demo?.description ||
+    ''
+
+  const image =
+    raw?.thumbnail ||
+    firstImage(raw?.images) ||
+    demo?.image ||
+    null
+
+  const heartsRaw = raw?.hearts ?? raw?.metadata?.hearts ?? demo?.hearts ?? 0
+  const hearts = Number.parseInt(String(heartsRaw).replace(/[^\d]/g, ''), 10) || 0
+
+  const priceText =
+    formatPriceUA(priceFromRaw) ||
+    raw?.price_text ||
+    demo?.priceText ||
+    ''
+
+  return {
+    id: raw?.id || `demo-${index + 1}`,
+    handle: raw?.handle || `product-${index + 1}`,
+    title,
+    description,
+    image,
+    hearts,
+    priceText,
+    oldPriceText: raw?.oldPrice ? formatPriceUA(raw.oldPrice) : '',
+    categoryId:
+      raw?.product_category_id ||
+      raw?.category_id ||
+      raw?.metadata?.category_id ||
+      null,
+    raw,
+  }
+}
+
+----- /Users/a1111/projects/namelaka-stage1/app/src/pages.jsx -----
+import React from 'react'
+import ProductGrid from './components/ProductGrid.jsx'
+
+function t(locale, uk, en) {
+  return locale === 'en' ? en : uk
+}
+
+function slugOrIdMatch(routeValue, category) {
+  if (!routeValue || !category) return false
+  return routeValue === category.id || routeValue === category.handle
+}
+
+function renderOriginalFragment(html) {
+  if (!html) return null
+  return <div dangerouslySetInnerHTML={{ __html: html }} />
+}
+
+export function PageShell({
+  locale = 'uk',
+  snapshot,
+  children,
+}) {
+  return (
+    <>
+      {renderOriginalFragment(snapshot?.headerHtml)}
+      {renderOriginalFragment(snapshot?.categoriesHtml)}
+      <div className="stage1-page-content">
+        {children}
+      </div>
+    </>
+  )
+}
+
+export function HomePage({ locale = 'uk', products = [], snapshot }) {
+  return (
+    <PageShell locale={locale} snapshot={snapshot}>
+      <app-catalog>
+        <ProductGrid
+          locale={locale}
+          products={products}
+          emptyText={t(locale, 'Товарів поки немає', 'No products yet')}
+        />
+      </app-catalog>
+    </PageShell>
+  )
+}
+
+export function CatalogPage({ locale = 'uk', products = [], snapshot }) {
+  return (
+    <PageShell locale={locale} snapshot={snapshot}>
+      <div className="stage1-title-wrap">
+        <h1>{t(locale, 'Каталог', 'Catalog')}</h1>
+      </div>
+      <app-catalog>
+        <ProductGrid
+          locale={locale}
+          products={products}
+          emptyText={t(locale, 'Товарів поки немає', 'No products yet')}
+        />
+      </app-catalog>
+    </PageShell>
+  )
+}
+
+export function CategoryPage({
+  locale = 'uk',
+  categoryId,
+  categories = [],
+  products = [],
+  snapshot,
+}) {
+  const category = categories.find((c) => slugOrIdMatch(categoryId, c))
+  const filtered = category
+    ? products.filter((p) => !p.categoryId || p.categoryId === category.id)
+    : []
+
+  return (
+    <PageShell locale={locale} snapshot={snapshot}>
+      <div className="stage1-title-wrap">
+        <h1>{category ? category.name : t(locale, 'Категорія не знайдена', 'Category not found')}</h1>
+      </div>
+
+      {category ? (
+        <app-catalog>
+          <ProductGrid
+            locale={locale}
+            products={filtered}
+            emptyText={t(
+              locale,
+              'У цій категорії поки немає товарів',
+              'No products in this category yet'
+            )}
+          />
+        </app-catalog>
+      ) : (
+        <div className="stage1-empty">
+          {t(locale, 'Перевірте адресу категорії', 'Check the category URL')}
+        </div>
+      )}
+    </PageShell>
+  )
+}
+
+export function ProductPage({
+  locale = 'uk',
+  productId,
+  products = [],
+  snapshot,
+}) {
+  const product = products.find((p) => p.id === productId || p.handle === productId)
+
+  if (!product) {
+    return (
+      <PageShell locale={locale} snapshot={snapshot}>
+        <div className="stage1-empty">
+          {t(locale, 'Товар не знайдено', 'Product not found')}
+        </div>
+      </PageShell>
+    )
+  }
+
+  return (
+    <PageShell locale={locale} snapshot={snapshot}>
+      <div className="stage1-product-page">
+        <div className="stage1-product-media">
+          {product.image ? (
+            <img src={product.image} alt={product.title} />
+          ) : (
+            <div className="stage1-image-fallback stage1-image-fallback-large">No image</div>
+          )}
+        </div>
+
+        <div className="stage1-product-info">
+          <h1>{product.title}</h1>
+          <div className="stage1-product-price">{product.priceText || '—'}</div>
+          {product.description ? <p>{product.description}</p> : null}
+
+          <div className="stage1-actions">
+            <a href={`/${locale}/catalog`} className="stage1-btn">
+              {t(locale, 'Назад до каталогу', 'Back to catalog')}
+            </a>
+          </div>
+        </div>
+      </div>
+    </PageShell>
+  )
+}
+
+export function SearchPage({ locale = 'uk', query = '', products = [], snapshot }) {
+  const q = String(query || '').trim().toLowerCase()
+  const filtered = !q
+    ? []
+    : products.filter((p) =>
+        `${p.title} ${p.description}`.toLowerCase().includes(q)
+      )
+
+  return (
+    <PageShell locale={locale} snapshot={snapshot}>
+      <div className="stage1-title-wrap">
+        <h1>
+          {t(locale, 'Пошук', 'Search')}
+          {q ? `: ${q}` : ''}
+        </h1>
+      </div>
+
+      <app-catalog>
+        <ProductGrid
+          locale={locale}
+          products={filtered}
+          emptyText={t(locale, 'Нічого не знайдено', 'Nothing found')}
+        />
+      </app-catalog>
+    </PageShell>
+  )
+}
+
+export function NotFoundPage({ locale = 'uk', snapshot }) {
+  return (
+    <PageShell locale={locale} snapshot={snapshot}>
+      <div className="stage1-empty">
+        {t(locale, 'Сторінку не знайдено', 'Page not found')}
+      </div>
+    </PageShell>
+  )
+}
+
+export default {
+  HomePage,
+  CatalogPage,
+  CategoryPage,
+  ProductPage,
+  SearchPage,
+  NotFoundPage,
+}
+
+----- /Users/a1111/projects/namelaka-stage1/app/src/App.jsx -----
+import React from 'react'
+import * as Pages from './pages.jsx'
+import { getCategories, getProducts } from './api.js'
+import { normalizeCategory, normalizeProduct } from './lib/normalizeProduct.js'
+import { loadOriginalSnapshot } from './lib/originalSnapshot.js'
+
+function parseRoute() {
+  const url = new URL(window.location.href)
+  const parts = url.pathname.replace(/\/+$/, '').split('/').filter(Boolean)
+
+  let locale = 'uk'
+  let rest = parts
+
+  if (parts[0] === 'ua' || parts[0] === 'en') {
+    locale = parts[0] === 'ua' ? 'uk' : 'en'
+    rest = parts.slice(1)
+  }
+
+  if (rest.length === 0) return { type: 'home', locale }
+
+  if (rest[0] === 'catalog') return { type: 'catalog', locale }
+  if (rest[0] === 'category' && rest[1]) return { type: 'category', locale, categoryId: decodeURIComponent(rest[1]) }
+  if (rest[0] === 'product' && rest[1]) return { type: 'product', locale, productId: decodeURIComponent(rest[1]) }
+  if (rest[0] === 'search') return { type: 'search', locale, query: url.searchParams.get('q') || '' }
+
+  return { type: 'notfound', locale }
+}
+
+export default function App() {
+  const [route, setRoute] = React.useState(() => parseRoute())
+  const [loading, setLoading] = React.useState(true)
+  const [error, setError] = React.useState('')
+  const [snapshot, setSnapshot] = React.useState({ headerHtml: '', categoriesHtml: '', demoCards: [] })
+  const [categories, setCategories] = React.useState([])
+  const [products, setProducts] = React.useState([])
+
+  React.useEffect(() => {
+    const onNav = () => setRoute(parseRoute())
+    window.addEventListener('popstate', onNav)
+
+    const onClick = (e) => {
+      const a = e.target.closest('a[href]')
+      if (!a) return
+      const href = a.getAttribute('href') || ''
+      if (!href.startsWith('/')) return
+      if (a.target === '_blank') return
+      e.preventDefault()
+      window.history.pushState({}, '', href)
+      setRoute(parseRoute())
+    }
+
+    document.addEventListener('click', onClick)
+    return () => {
+      window.removeEventListener('popstate', onNav)
+      document.removeEventListener('click', onClick)
+    }
+  }, [])
+
+  React.useEffect(() => {
+    let cancelled = false
+
+    async function boot() {
+      try {
+        setLoading(true)
+        setError('')
+
+        const [snap, catsRaw, prodsRaw] = await Promise.all([
+          loadOriginalSnapshot(),
+          getCategories(),
+          getProducts(),
+        ])
+
+        if (cancelled) return
+
+        const cats = Array.isArray(catsRaw) ? catsRaw.map(normalizeCategory) : []
+        const demoCards = Array.isArray(snap?.demoCards) ? snap.demoCards : []
+        const prods = Array.isArray(prodsRaw)
+          ? prodsRaw.map((p, i) => normalizeProduct(p, i, demoCards[i] || demoCards[i % Math.max(demoCards.length, 1)] || null))
+          : []
+
+        setSnapshot(snap)
+        setCategories(cats.sort((a, b) => a.rank - b.rank))
+        setProducts(prods)
+      } catch (err) {
+        console.error(err)
+        if (!cancelled) setError(err?.message || 'Failed to load stage1 data')
+      } finally {
+        if (!cancelled) setLoading(false)
+      }
+    }
+
+    boot()
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  if (loading) {
+    return <div className="stage1-boot">Loading…</div>
+  }
+
+  if (error) {
+    return <div className="stage1-boot stage1-error">{error}</div>
+  }
+
+  const common = { locale: route.locale, snapshot, categories, products }
+
+  if (route.type === 'home') {
+    return <Pages.HomePage {...common} />
+  }
+
+  if (route.type === 'catalog') {
+    return <Pages.CatalogPage {...common} />
+  }
+
+  if (route.type === 'category') {
+    return <Pages.CategoryPage {...common} categoryId={route.categoryId} />
+  }
+
+  if (route.type === 'product') {
+    return <Pages.ProductPage {...common} productId={route.productId} />
+  }
+
+  if (route.type === 'search') {
+    return <Pages.SearchPage {...common} query={route.query} />
+  }
+
+  return <Pages.NotFoundPage {...common} />
+}
+
+
+================================================================
+## CSS FILE CHECKS
+
+CMD: cd '/Users/a1111/projects/namelaka-stage1/app' && ls -lh public/original/ua/*.css 2>/dev/null || true; echo; echo '--- original-components.css head ---'; sed -n '1,80p' public/original/ua/original-components.css 2>/dev/null || true; echo; echo '--- suspicious rules starting with { ---'; rg -n '^\s*\{' public/original/ua/original-components.css 2>/dev/null | head -n 30 || true
+
+-rw-r--r--@ 1 a1111  staff    49K Feb 21 23:29 public/original/ua/original-components.css
+-rw-r--r--@ 1 a1111  staff    15K Feb 21 23:29 public/original/ua/styles-ZBSN6PDF.css
+
+--- original-components.css head ---
+/* Auto-extracted Angular component styles from mirrored bundles
+   Generated: 2026-02-21T21:29:02.238Z
+   Source: main-7UYDGGLH.js, chunk-ZOZRNSYK.js
+   NOTE: %COMP% placeholders removed to make snapshot styling work in React stage1.
+*/
+
+{display:flex;flex-direction:column;align-items:center}@media (hover: hover) and (pointer: fine){:hover   .heart, :hover   .counter, :hover   .counter.big{background-color:#fedfe4}:hover   .heart   span, :hover   .counter   span, :hover   .counter.big   span{color:#7e4d4c}:hover     app-heart-icon path, :hover     app-heart-small-icon path{color:#ca494d}}@media (hover: none) and (pointer: coarse){:active   .heart, :active   .counter, :active   .counter.big{background-color:#fedfe4}:active   .heart   span, :active   .counter   span, :active   .counter.big   span{color:#7e4d4c}:active     app-heart-icon path, :active     app-heart-small-icon path{color:#ca494d}}.heart{display:flex;align-items:center;justify-content:center;background-color:#ffebef;border-radius:100px}.heart.small{height:32px;width:32px}.heart.big{background-color:#fef4f6;height:40px;width:40px}.counter{display:flex;align-items:center;justify-content:space-between;padding:2px 4px 2px 2px;gap:2px;font-size:10px;border-radius:40px;font-weight:600;margin-top:-4px;background-color:#ffebef}.counter.big{background-color:#ffdde0}
+
+{display:flex;flex-direction:column;gap:8px}@media (hover: hover) and (pointer: fine){:hover   .info   .serif{color:#ca494d}:hover   .info   .price{color:#7e4d4c}}@media (hover: none) and (pointer: coarse){:active   .info   .serif{color:#ca494d}:active   .info   .price{color:#7e4d4c}}.image{aspect-ratio:.836;width:100%;position:relative;border-radius:12px;-webkit-border-radius:12px;overflow:hidden;clip-path:inset(0 round 12px)}.image   img{object-fit:cover;width:100%;height:100%;filter:drop-shadow(-20px 10px 10px rgba(184,126,137,.6));border-radius:12px;-webkit-border-radius:12px}.image   app-product-like{position:absolute;bottom:4px;right:4px}.info{display:flex;flex-direction:column;gap:8px}.info   h1.serif, .info   h3.serif{color:#8e1500}.info   h3.serif, .info   .text-caption.default{display:none}.info   .price{color:#9b6a68}@media screen and (max-width: 1020px){.info{gap:0}.info   h1.serif, .info   .text-body.large{display:none}.info   h3.serif, .info   .text-caption.default{display:block}}
+
+{display:flex;flex-direction:column;width:100%;height:100%}.products-grid-container{width:100%;height:100%;overflow:auto}.products-grid{max-width:1600px;width:100%;flex:1;display:grid;grid-template-columns:repeat(4,1fr);padding:0 40px 120px;gap:24px 40px;margin:0 auto;position:relative}.products-grid > :nth-child(1), .products-grid > :nth-child(2), .products-grid > :nth-child(3), .products-grid > :nth-child(4){margin-top:16px}@media screen and (max-width: 1400px){.products-grid{grid-template-columns:repeat(3,1fr)}.products-grid > :nth-child(1), .products-grid > :nth-child(2), .products-grid > :nth-child(3){margin-top:16px}.products-grid > :nth-child(4){margin-top:0}.products-grid-container{background-size:50% auto}}@media screen and (max-width: 1020px){.products-grid{gap:16px 24px}}@media screen and (max-width: 750px){.products-grid{grid-template-columns:repeat(2,1fr);padding:0 16px 120px;gap:16px 8px}.products-grid > :nth-child(1), .products-grid > :nth-child(2){margin-top:16px}.products-grid > :nth-child(3){margin-top:0}.products-grid-container{background-size:100% auto}}
+
+.owl-theme{display:block}
+
+{width:100%;display:flex;justify-content:center}button{height:56px;width:100%;padding:0 16px;display:flex;align-items:center;border-radius:80px;border:none;outline:none;position:relative}button   .child-content{width:100%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:14px;font-weight:450;gap:10px;white-space:nowrap;overflow:hidden}button   .leading{position:absolute;left:0;top:0}button.primary{background-color:#e88a92}@media (hover: hover) and (pointer: fine){button.primary:hover{background-color:#ec7476}}@media (hover: none) and (pointer: coarse){button.primary:active{background-color:#ec7476}}button.secondary{background-color:#f6cacf}@media (hover: hover) and (pointer: fine){button.secondary:hover{background-color:#e4b3b9}}@media (hover: none) and (pointer: coarse){button.secondary:active{background-color:#e4b3b9}}button.light{background-color:transparent}button.light   .child-content{color:#8e1500}@media (hover: hover) and (pointer: fine){button.light:hover   .child-content{color:#f9a67c}}@media (hover: none) and (pointer: coarse){button.light:active   .child-content{color:#f9a67c}}button.elevated{background-color:#ffdde0}button.elevated   .child-content{color:#8e1500}@media (hover: hover) and (pointer: fine){button.elevated:hover{background-color:#fed4d2}}@media (hover: none) and (pointer: coarse){button.elevated:active{background-color:#fed4d2}}button:disabled{background-color:#e3b9be}button:disabled.elevated   .child-content{color:#b89797}
+
+{display:flex;height:24px;width:24px;align-items:center;justify-content:center;cursor:pointer}@media (hover: hover) and (pointer: fine){:hover   path{color:#ca494d}}@media (hover: none) and (pointer: coarse){:active   path{color:#ca494d}}
+
+{display:flex;width:100%;height:calc(100svh - 32px);max-height:750px;overflow-x:hidden}.wrapper{height:100%;width:100%;background:#ffebef;border-radius:24px 24px 0 0;box-shadow:0 8px 10px -5px #0003,0 16px 24px 2px #00000024,0 6px 30px 5px #0000001f;transition:.1s}.bottom-sheet-handle{height:0;width:58px;display:flex;border:1.3px solid transparent;border-image:linear-gradient(90deg,#f7dcd3,#f1d1b7 39.5%,#dfbdb4);border-image-slice:1;position:absolute;top:12px;left:calc(50% - 29px)}.bottom-sheet-handle-trigger, .bottom-sheet-handle{display:none}.mobile{max-height:none;height:100%}.mobile   .bottom-sheet-handle-trigger{display:flex;width:100%;height:48px;position:absolute;top:0;left:0}.mobile   .bottom-sheet-handle{height:0;width:58px;display:flex;border:1.3px solid transparent;border-image:linear-gradient(90deg,#f7dcd3,#f1d1b7 39.5%,#dfbdb4);border-image-slice:1;position:absolute;top:12px;left:calc(50% - 29px)}@media screen and (max-width: 750px){{max-height:none;height:100%}}
+
+app-modal-container .wrapper{display:flex;flex-direction:column;position:relative;padding:0 19px 0 24px}app-close{position:absolute;top:22px;right:16px}h3{margin-top:26px;text-align:center}h1{margin-top:20px;text-align:center}.gallery{display:grid;gap:16px 8px;height:auto;overflow:auto;padding-bottom:24px;padding-right:5px;margin-top:28px}.gallery   .decoration{display:flex;flex-direction:column;gap:8px;width:100%}@media (hover: hover) and (pointer: fine){.gallery   .decoration:hover   .info   .text-caption.default{color:#ca494d}.gallery   .decoration:hover   .info   .text-caption.small{color:#7e4d4c}}@media (hover: none) and (pointer: coarse){.gallery   .decoration:active   .info   .text-caption.default{color:#ca494d}.gallery   .decoration:active   .info   .text-caption.small{color:#7e4d4c}}.gallery   .decoration   img{width:100%;object-fit:cover;aspect-ratio:1;margin-bottom:8px}.gallery   .decoration   .info{display:flex;flex-direction:column}.gallery   .decoration   .info   .price{color:#9b6a68}@media screen and (max-width: 750px){     app-modal-container .wrapper{height:calc(100svh - 80px);padding:0 16px}app-close{top:24px}.gallery{margin-top:30px;padding-bottom:16px;padding-right:0}}
+
+{width:100%;display:flex;position:relative;flex-direction:column;gap:4px}label{width:100%;height:100%;display:flex;gap:16px;border-radius:16px;padding:18px 16px;border:1px solid #f6cacf;font-weight:450}@media (hover: hover) and (pointer: fine){label:not(:focus-within):hover{background-color:#fff3ef}label:not(:focus-within):hover   textarea{background-color:#fff3ef}}@media (hover: none) and (pointer: coarse){label:not(:focus-within):active{background-color:#fff3ef}label:not(:focus-within):active   textarea{background-color:#fff3ef}}label   textarea{width:100%;outline:0;border:0;background:#ffebef;font-size:14px;font-style:italic;resize:none}label   textarea::placeholder{color:#b89797;font-style:italic}label:focus-within{border:2px solid #e4aab6}label   .icon{height:24px;width:24px}label.error{border:2px solid #a72a53}.hint-container{display:flex;min-height:20px;padding:0 16px;align-items:end}.hint-container   .text-body.small{color:#9b6a68}.hint-container   .error{color:#a72a53}.label{margin-bottom:16px;font-weight:450;color:#9b6a68}
+
+{display:flex}     app-modal-container .wrapper{display:flex;flex-direction:column;justify-content:space-between}h1{margin-top:20px;text-align:center}app-close{position:absolute;top:22px;right:16px}.container{display:flex;height:100%;width:438px;margin:40px auto 0;overflow:auto;flex-direction:column;gap:24px;border-radius:12px;padding-bottom:20px}.container   img{width:100%;aspect-ratio:1.68;object-fit:cover;border-radius:12px}.buttons-container{display:flex;position:unset;flex-direction:column;gap:4px;padding:16px 16px 8px;height:140px;align-items:center}.buttons-container   app-button{width:438px}@media screen and (max-width: 750px){{height:calc(100svh - 80px)}.container{padding:0 16px 16px;margin:24px 0 0;width:100%}.container   img{aspect-ratio:1.225}.buttons-container   app-button{width:100%}}
+
+{display:flex;align-items:center;gap:8px;font-size:16px;font-weight:600}@media (hover: hover) and (pointer: fine){:hover   svg   path{stroke:#ca494d}:hover   .primary{color:#ca494d}}@media (hover: none) and (pointer: coarse){:active   svg   path{stroke:#ca494d}:active   .primary{color:#ca494d}}.primary{color:#8e1500}
+
+{width:calc(100% + 40px);border-bottom:1px solid transparent;border-image:linear-gradient(90deg,#f7dcd3,#f1d1b7 39.5%,#dfbdb4);border-image-slice:1;margin-left:24px}
+
+{display:flex}
+
+{display:flex;gap:8px;align-items:center}.piece{color:#8e1500;text-decoration:underline;cursor:pointer}@media (hover: hover) and (pointer: fine){.piece:hover{color:#ca494d}}@media (hover: none) and (pointer: coarse){.piece:active{color:#ca494d}}.piece:last-child{text-decoration:none;color:#9b6a68;cursor:unset}.piece.joiner{text-decoration:none;cursor:unset}
+
+path{color:#8e1500}@media (hover: hover) and (pointer: fine){:hover   path{stroke:#ca494d}}@media (hover: none) and (pointer: coarse){:active   path{stroke:#ca494d}}
+
+{display:flex;align-items:center;gap:8px;cursor:pointer}@media (hover: hover) and (pointer: fine){:hover     app-pencil-icon path, :hover     app-pencil-icon circle, :hover   .button-text.primary{color:#ca494d}}@media (hover: none) and (pointer: coarse){:active     app-pencil-icon   app-pencil-icon path, :active     app-pencil-icon   app-pencil-icon circle, :active     app-pencil-icon .button-text.primary{color:#ca494d}}.button-text.primary{color:#8e1500}
+
+{display:flex}     app-modal-container .wrapper{display:flex;flex-direction:column;justify-content:space-between}h1{margin-top:20px;text-align:center}app-close{position:absolute;top:22px;right:16px}.container{display:flex;height:100%;width:438px;margin:40px auto 0;overflow:auto;flex-direction:column;gap:16px;border-radius:12px;padding-bottom:20px}.container   h1{margin-top:0;text-align:start}.container   img{width:100%;aspect-ratio:1.15;object-fit:cover;border-radius:12px}.container   .packing-info{display:flex;flex-direction:column;gap:8px}.buttons-container{display:flex;position:unset;flex-direction:column;gap:4px;padding:16px 16px 8px;height:140px;align-items:center}.buttons-container   app-button{width:438px}@media screen and (max-width: 750px){{height:calc(100svh - 80px)}.container{padding:0 16px 16px;margin:24px 0 0;width:100%;gap:20px}.container   img{aspect-ratio:.8575}.buttons-container   app-button{width:100%}}
+
+{display:flex;flex-direction:column;padding-bottom:120px}.products-grid{max-width:1600px;width:100%;flex:1;display:grid;grid-template-columns:repeat(4,1fr);padding:0 40px 120px;gap:24px 16px;margin:0 auto}.empty{display:flex;flex-direction:column;align-items:center;gap:40px;margin:40px auto 0;width:100%;max-width:438px}.empty   .text-body.large{font-weight:400}.empty   .buttons-container{width:100%;padding:0 16px;display:flex;flex-direction:column;gap:8px}.pattern-background{background-size:33.3333333333% auto;top:516px}@media screen and (max-width: 1400px){.products-grid{grid-template-columns:repeat(3,1fr)}.pattern-background{background-size:50% auto}}@media screen and (max-width: 750px){.products-grid{grid-template-columns:repeat(2,1fr);padding:0 16px 120px;gap:16px 8px}.empty{margin-top:20px}.pattern-background{background-size:100% auto;top:508px}}
+
+{display:flex;gap:4px;align-items:center}h3, h1{white-space:pre-line;text-align:center;flex:1}
+
+{height:100%;display:flex;flex-direction:column;padding:0 16px}.delivery{height:100%;display:flex;flex-direction:column;padding-top:16px}.delivery   app-checkout-title{margin-bottom:16px}.delivery   .header{display:flex;justify-content:flex-end;padding:20px 0 60px}.delivery   .content{display:flex;justify-content:center;align-items:center;flex-direction:column;border-radius:20px;background-color:#ffdde0;padding:24px 16px;cursor:pointer}@media (hover: hover) and (pointer: fine){.delivery   .content:hover{background-color:#fed4d2}}@media (hover: none) and (pointer: coarse){.delivery   .content:active{background-color:#fed4d2}}.delivery   .content   span{color:#9b6a68}.delivery   .content__header{font-weight:450;font-size:24px;text-align:center;width:100%}.delivery   .content__description{width:100%;text-align:left;margin-top:8px;font-size:12px;line-height:16px;font-style:italic}.delivery   .content__description   span{text-align:center}.delivery   .cost{font-size:12px;padding:0 2px 40px 20px;margin:0 auto;width:438px}.delivery   .cost.dubai{display:flex;justify-content:center}.delivery   .cost   li{color:#9b6a68;line-height:16px}.scrollable{justify-content:space-between;display:flex;flex-direction:column;flex:1;flex-grow:1;overflow:auto}.scrollable   .container{display:flex;flex-direction:column;gap:20px;margin:auto;padding:20px;width:438px}.centred{text-align:center!important}.description-container{display:flex;flex-direction:column;width:100%}@media screen and (max-width: 750px){.scrollable{overflow-y:scroll}.scrollable   .container{margin:auto 0;width:unset;padding:40px 0}.delivery   .cost{margin:0;width:unset;padding-bottom:16px}}
+
+path, circle{color:#8e1500}@media (hover: hover) and (pointer: fine){:hover   path, :hover   circle{color:#ca494d}}@media (hover: none) and (pointer: coarse){:active   path, :active   circle{color:#ca494d}}
+
+{width:100%;display:flex;flex-direction:column;gap:4px}label{width:100%;display:flex;align-items:center;gap:12px;position:relative;height:56px;border:1px solid #f6cacf;border-radius:16px;padding:0 16px}label   input{width:100%;outline:0;border:0;background:#ffebef;font-size:14px;font-style:italic}label   input::placeholder{color:#b89797;font-style:italic}label:focus-within{border:2px solid #e4aab6}@media (hover: hover) and (pointer: fine){label:not(:focus-within):hover{background-color:#fff3ef}label:not(:focus-within):hover   input{background-color:#fff3ef}}@media (hover: none) and (pointer: coarse){label:not(:focus-within):active{background-color:#fff3ef}label:not(:focus-within):active   input{background-color:#fff3ef}}label   span{position:absolute;padding:0 4px;left:12px;top:-10px;border-radius:4px;font-size:12px;line-height:16px;transition:.3s;color:#9b6a68}label   .icon{height:24px;width:24px}label.floating-label   span{top:18px;left:16px;font-size:14px;line-height:20px;color:#b89797;font-style:italic}label.floating-label   span.with-leading{left:52px}label.floating-label   .floating{transform:translateY(-27px);font-size:12px;line-height:16px;font-style:normal;color:#9b6a68;background-color:#ffebef}label.floating-label   .floating.with-leading{transform:translateY(-27px) translate(-36px)}label.error{border:2px solid #a72a53}.hint-container{display:flex;min-height:20px;padding:0 16px 12px;align-items:end}.hint-container   .error{font-size:12px;line-height:16px;color:#a72a53}.hint-container   .hint{color:#9b6a68}.label{color:#b89797}
+
+{background-color:#e88a92;width:100%;display:flex;padding:12px;border-radius:16px;font-size:16px;font-weight:450;justify-content:space-between;align-items:center}@media (hover: hover) and (pointer: fine){:hover{background-color:#ec7476}}@media (hover: none) and (pointer: coarse){:active{background-color:#ec7476}}
+
+{display:flex;justify-content:center;padding:4px;border:1px solid #e4aab6;border-radius:24px;gap:4px}button{height:32px!important;white-space:nowrap;background-color:#f6cacf;border:none;outline:none;color:#fff;flex:1;border-radius:4px;display:flex;align-items:center;justify-content:center;gap:2px}@media (hover: hover) and (pointer: fine){button:hover{background-color:#e4b3b9}}@media (hover: none) and (pointer: coarse){button:active{background-color:#e4b3b9}}button.active{background-color:#e88a92}@media (hover: hover) and (pointer: fine){button.active:hover{background-color:#e88a92}}@media (hover: none) and (pointer: coarse){button.active:active{background-color:#e88a92}}button:first-child{border-radius:24px 4px 4px 24px}button:last-child{border-radius:4px 24px 24px 4px}
+
+{display:flex;background-color:#fef4f6;border-radius:20px;padding:4px;margin:0 auto;gap:4px;width:438px}.tab{display:flex;align-items:center;justify-content:center;gap:4px;padding:8px 0;flex:1;font-weight:450;background-color:transparent;border-radius:16px;transition:.3s}.tab   span{line-height:12px;color:#b89797;font-size:10px}.tab.past{background-color:#ffebef}.tab.past   span{color:#8e1500}.tab.active{background-color:#ffdde0}.tab.active   span{color:#9b6a68}@media screen and (max-width: 750px){{margin:0 20px;width:unset}}
+
+.tel-input{display:flex;align-items:center;gap:4px;border:1px solid #f6cacf;padding:18px 12px;border-radius:16px;position:relative}@media (hover: hover) and (pointer: fine){.tel-input:not(:focus-within):hover{background-color:#fff3ef}}@media (hover: none) and (pointer: coarse){.tel-input:not(:focus-within):active{background-color:#fff3ef}}.tel-input.error{border:2px solid #a72a53}.tel-input   .hint{position:absolute;top:-10px;background-color:#ffebef;padding:0 4px;font-size:12px;font-weight:400;line-height:16px;color:#9b6a68;border-radius:4px}.tel-input   .tel-input-triger{display:flex;align-items:center;background:none;border:none;cursor:pointer;gap:4px}.tel-input   .tel-input-triger   span{width:max-content;font-size:14px;line-height:20px;font-style:italic;font-weight:400}.tel-input   .national-number{background:none;border:none;outline:none;font-size:14px;width:100%;font-style:italic;line-height:20px;font-weight:400}.tel-input   .national-number::placeholder{color:#8e1500;font-size:14px;font-style:italic;font-weight:400}.country-dropdown{background:#ffebef;border:none;border-radius:24px;box-shadow:0 0 15px 1px #73333f40!important;max-height:190px;width:240px;overflow-y:hidden}.country-dropdown   .search-block{gap:12px;display:flex;padding:12px 16px;border-bottom:1px solid transparent;border-image:linear-gradient(90deg,#f7dcd3,#f1d1b7 39.5%,#dfbdb4);border-image-slice:1}.country-dropdown   .search-block   .search{font-size:14px;font-style:italic;font-weight:400;line-height:20px;color:#8e1500;width:100%;background:#ffebef;border:none;outline:none}.country-dropdown   .search-block   .search::placeholder{color:#8e1500;font-size:14px;font-style:italic;font-weight:400}.country-dropdown   .country-list{overflow-y:auto;list-style:none;margin:0;padding:0;max-height:144px}.country-dropdown   .country-list   .no-entry{padding:12px 16px;font-size:14px;line-height:20px;font-style:italic;font-weight:400;display:flex}.country-dropdown   .country-list   .country{display:flex;padding:12px 16px;border-bottom:1px solid transparent;border-image:linear-gradient(90deg,#f7dcd3,#f1d1b7 39.5%,#dfbdb4);border-image-slice:1;font-size:14px;line-height:20px;font-style:italic;font-weight:400;gap:12px;cursor:pointer}@media (hover: hover) and (pointer: fine){.country-dropdown   .country-list   .country:hover{background-color:#fedfe4}.country-dropdown   .country-list   .country:hover   div{color:#ca494d}}@media (hover: none) and (pointer: coarse){.country-dropdown   .country-list   .country:active{background-color:#fedfe4}.country-dropdown   .country-list   .country:active   div{color:#ca494d}}.country-dropdown   .country-list   .country   .flag{width:24px;height:24px;display:flex;justify-content:center;align-items:center}.country-dropdown   .country-list   .country.selected{background-color:#ffdde0}.hint-container{display:flex;min-height:20px;padding:4px 16px 12px;align-items:end}.hint-container   .error{font-size:12px;line-height:16px;color:#a72a53}
+
+app-input label{gap:0}     app-input label.error input,      app-input label input:focus{padding-right:12px}     app-input label .leading{margin-right:12px}.scrollable-container{position:absolute;top:124px;z-index:9;left:calc((100% - 438px)/2);right:0;bottom:0;overflow-y:auto;background:#ffebef;width:438px}.item{display:flex;padding:12px 16px;gap:12px;border:1px solid transparent;border-image:linear-gradient(90deg,#f7dcd3,#f1d1b7 39.5%,#dfbdb4) 2;border-top:0;border-left:0;border-right:0}.item   div{display:flex;flex-direction:column;gap:4px}.text-secondary{color:#9b6a68}.hint-container{display:flex;min-height:20px;padding:4px 16px 12px;align-items:end}.hint-container   .error, .hint-container   .error   span{color:#a72a53}.hint-container   .hint{color:#9b6a68}.hint-container   .underline{text-decoration:underline}@media screen and (max-width: 750px){.scrollable-container{left:0;width:unset}}
+
+.map-wrapper{border-radius:16px;overflow:hidden;display:block;background-color:#ffdde0}.map-wrapper   .text-info{display:flex;padding:8px 16px;width:100%;justify-content:center;flex-direction:column;gap:4px;align-items:center}.map-wrapper   .text-info   span{display:flex;align-items:center;text-align:center;gap:4px}.map-wrapper   .text-info   .title{color:#8e1500}.map-wrapper   .text-info   .description, .map-wrapper   .text-info   .description-link{color:#9b6a68}.map-wrapper   .text-info   .description-link{display:flex;flex-direction:column;justify-content:center;gap:0px}.map-wrapper   google-map{width:100%;height:100%;border-radius:16px}.map-wrapper   .map-div{position:relative}.map-wrapper   .map-div   .center-marker{position:absolute;top:50%;left:50%;transform:translate(-50%,-100%);pointer-events:none;transition:transform .2s cubic-bezier(.4,2,.6,1),filter .2s}.map-wrapper   .map-div   img.lifted{transform:translate(-50%,-130%);filter:drop-shadow(0 6px 12px rgba(0,0,0,.18))}
+
+app-modal-container{height:364px}     app-modal-container .wrapper{height:364px;display:flex;flex-direction:column}     app-button.disabled button{background-color:#e3b9be}@media (hover: hover) and (pointer: fine){     app-button.disabled button:hover{background-color:#e3b9be}}@media (hover: none) and (pointer: coarse){     app-button.disabled button:active{background-color:#e3b9be}}     input[type=number]::-webkit-inner-spin-button,      input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none}     input[type=number]{-webkit-appearance:textfield;appearance:textfield}app-close{position:absolute;top:22px;right:16px}h3{margin-top:26px;text-align:center}h1{margin-top:20px;text-align:center}h3, h1{margin-bottom:40px}.form-container{height:100%;display:flex;flex-direction:column;justify-content:space-between;width:438px;margin:0 auto;padding-bottom:20px}.buttons-container{display:flex;flex-direction:column;align-items:center;padding:16px 16px 8px}.buttons-container   app-button{width:438px}.button-text.primary{text-align:center;color:#e88a92}.button-text.primary.disabled{color:#e3b9be}@media screen and (max-width: 750px){app-close{top:24px}h3, h1{margin-bottom:42px}.form-container{width:100%;padding:0 16px 20px;margin:0}.buttons-container{align-items:start}.buttons-container   app-button{width:100%}}
+
+{padding:16px 0 0;max-height:100%;height:100%;width:100%;overflow:hidden;display:flex;flex-direction:column}.input{margin:4px 0}.mobile-bottom-bar   .secondary{color:#747474;font-size:14px}.mobile-bottom-bar   .primary{color:#383838;font-size:14px;font-weight:700}.header{color:#9b6a68;margin-bottom:16px;font-weight:450;margin-top:10px}.header.primary{color:#8e1500}.button{margin:4px 0}.house-container{display:flex;gap:16px}.round{background-color:#f8f8f8;font-size:12px;border-radius:100px;padding:8px 10px;line-height:10px;height:min-content}.previous{color:#fff;background-color:#c7c7c7}.active-button{background-color:#fff}.hint{font-size:14px;padding-bottom:12px;padding-top:16px;color:#b9aeae}.hint   .response{color:#9b6a68}app-checkbox{margin-bottom:56px}app-time-picker{margin-bottom:10px}.delivery-date-warning{color:#9b6a68;margin-bottom:24px}.delivery-container{position:relative}.courier-note{margin-top:24px}
+
+app-input label{gap:0}     app-input label.error input,      app-input label input:focus{padding-right:12px}     app-input label .leading{margin-right:12px}.scrollable-container{position:absolute;top:124px;z-index:9;left:calc((100% - 438px)/2);right:0;bottom:0;overflow-y:auto;background:#ffebef;width:438px}.item{display:flex;padding:12px 16px;gap:12px;border:1px solid transparent;border-image:linear-gradient(90deg,#f7dcd3,#f1d1b7 39.5%,#dfbdb4) 2;border-top:0;border-left:0;border-right:0}.item   div{display:flex;flex-direction:column;gap:4px}.text-secondary{color:#9b6a68}.hint-container{display:flex;min-height:20px;padding:4px 16px 12px;align-items:end}.hint-container   .error{color:#a72a53}.hint-container   .hint{color:#9b6a68}.hint-container   .underline{text-decoration:underline}@media screen and (max-width: 750px){.scrollable-container{left:0;width:unset}}
+
+{padding:16px 0 0;max-height:100%;height:100%;width:100%;overflow:hidden;display:flex;flex-direction:column}.input{margin:4px 0}.mobile-bottom-bar   .secondary{color:#747474;font-size:14px}.mobile-bottom-bar   .primary{color:#383838;font-size:14px;font-weight:700}.button{margin:4px 0}.previous{color:#fff;background-color:#c7c7c7}.active-recepient{background-color:#fff}.house-container{display:flex;gap:16px}.delivery-container{position:relative}.header{color:#9b6a68;margin-bottom:16px;font-weight:450;margin-top:10px}.header.primary{color:#8e1500}app-checkbox{margin-bottom:56px}.hint{font-size:14px;padding-bottom:12px;padding-top:16px;color:#b9aeae}.hint   .response{color:#9b6a68}.map-container{margin:16px 0 24px}
+
+{padding:16px 0 0;max-height:100%;height:100%;width:100%;overflow:hidden;display:flex;flex-direction:column}.input, .button{margin:4px 0}.previous{color:#fff;background-color:#c7c7c7}.active-recepient{background-color:#fff}.header{margin-bottom:16px;font-weight:450;margin-top:10px;color:#9b6a68}.header.primary{color:#8e1500}.map-container{margin-bottom:24px}app-checkbox{margin-bottom:56px}
+
+{padding:16px;display:grid;grid-template-columns:1fr 2fr;gap:12px}.image{display:flex;flex-direction:column;width:100%;gap:8px}.image   .product-image{border-radius:16px;object-fit:cover;width:100%;aspect-ratio:1}.image   .nova-post{display:flex;align-items:center;gap:4px}.image   .nova-post   span{color:#9b6a68}.details{display:flex;flex-direction:column;justify-content:space-between}.details   .lines   .line{display:flex;margin-bottom:4px;justify-content:space-between;align-items:end;gap:8px}.details   .lines   .line   .primary{color:#8e1500}.details   .lines   .line   .text-caption.default{color:#9b6a68}.details   .lines   .line:first-child{align-items:start}.details   .lines   .line:first-child   span{line-height:20px;white-space:nowrap;margin-top:1.2px}
+
+{height:100%;display:flex;flex-direction:column;padding:18px 0 0}app-checkout-title{margin-bottom:40px}.explanation{text-align:center;white-space:pre-line;margin-bottom:24px;padding:0 16px}.error-container{display:flex;gap:8px;padding-left:16px;margin-bottom:12px}.error-container   h3{color:#a72a53}.error-container   .text-decoration-underline{margin-bottom:4px}.order-items{display:flex;flex-direction:column;flex:1;overflow:auto}.order-items   app-order-item{flex-grow:unset}.explanation, .error-container, .order-items{width:438px;margin-left:auto;margin-right:auto}.buttons-container{display:flex;flex-direction:column;gap:4px;padding:16px 16px 4px;align-items:center}.buttons-container   app-button{width:438px}@media screen and (max-width: 750px){.explanation, .error-container, .order-items{width:100%;margin-left:0;margin-right:0}.buttons-container{align-items:start}.buttons-container   app-button{width:100%}}
+
+{padding:16px 0 0;max-height:100%;height:100%;width:100%;overflow:hidden;display:flex;flex-direction:column}.house-container{display:flex;gap:16px}.nova-post-hint{color:#9b6a68;margin-bottom:68px}.departure-date-info{display:flex;flex-direction:column;gap:8px;margin-bottom:16px}.departure-date-info   span, .departure-date-info   strong{color:#9b6a68}.delivery-dates-container{display:flex;flex-direction:column;gap:8px;margin-bottom:24px}.delivery-dates{display:flex;flex-wrap:wrap;gap:8px}.delivery-dates   .date{border-radius:50px;padding:1px;background:linear-gradient(90deg,#f7dcd3,#f1d1b7 39.5%,#dfbdb4)}@media (hover: hover) and (pointer: fine){.delivery-dates   .date:hover   .surface{background-color:#fff3ef}}@media (hover: none) and (pointer: coarse){.delivery-dates   .date:active   .surface{background-color:#fff3ef}}.delivery-dates   .date   .surface{background:#fef4f6;padding:8px 10px;border-radius:50px;display:flex;align-items:center;gap:8px;height:100%}.delivery-dates   .date   span{color:#9b6a68}.delivery-dates   .date.selected{padding:0;background:#e88a92}@media (hover: hover) and (pointer: fine){.delivery-dates   .date.selected:hover   .surface{background-color:#ec7476}}@media (hover: none) and (pointer: coarse){.delivery-dates   .date.selected:active   .surface{background-color:#ec7476}}.delivery-dates   .date.selected   .surface{background:#e88a92;padding:10px 12px}.delivery-dates   .date.selected   span{color:#fff}
+
+{display:flex}     app-switcher{margin:0 0 16px}     app-namelaka-intl-tel{margin-top:4px}     app-modal-container .bottom-sheet-handle,      app-modal-container .bottom-sheet-handle-trigger{display:none!important}     app-modal-container .wrapper{border-radius:0}     .container{padding:26px 16px 20px}     app-tabs{margin-top:16px;margin-bottom:36px}     .mobile-bottom-bar{background-color:#ffdde0;flex-direction:column;height:max-content;padding:16px;border-top:1px solid transparent;border-image:linear-gradient(90deg,#f7dcd3,#f1d1b7 39.5%,#dfbdb4);border-image-slice:1;position:unset;align-items:center}     .mobile-bottom-bar .buttons-container{width:438px;display:flex;gap:8px}     .mobile-bottom-bar .buttons-container app-button{width:unset;margin:0!important}     .mobile-bottom-bar .buttons-container app-button:last-child{flex:1}     .mobile-bottom-bar.summary .price-container{width:438px;display:flex;flex-direction:column;gap:8px;margin-bottom:12px}     .mobile-bottom-bar.summary .price{display:flex;color:#b9aeae;font-size:14px;gap:4px}     .mobile-bottom-bar.summary .price .secondary{color:#9b6a68}     app-time-picker{margin-bottom:24px}     .section-title{padding:0 0 16px}     .delivery-container{overflow:auto;padding:0 16px;display:flex;flex-direction:column;align-items:center;flex:1}     .delivery-container>*{width:438px}     app-button span{color:#fff}     .disable-scroll{overflow:hidden!important}     .hidden{display:none}     app-time-picker-bottom-sheet{position:absolute}@media screen and (max-width: 750px){{height:100dvh}     .delivery-container{align-items:start;overflow:scroll}     .delivery-container>*{width:100%}     app-tabs{margin-top:12px;margin-bottom:24px}     .mobile-bottom-bar{align-items:unset}     .mobile-bottom-bar .buttons-container{width:100%}     .mobile-bottom-bar.summary .price-container{width:100%}}
+
+
+--- suspicious rules starting with { ---
+7:{display:flex;flex-direction:column;align-items:center}@media (hover: hover) and (pointer: fine){:hover   .heart, :hover   .counter, :hover   .counter.big{background-color:#fedfe4}:hover   .heart   span, :hover   .counter   span, :hover   .counter.big   span{color:#7e4d4c}:hover     app-heart-icon path, :hover     app-heart-small-icon path{color:#ca494d}}@media (hover: none) and (pointer: coarse){:active   .heart, :active   .counter, :active   .counter.big{background-color:#fedfe4}:active   .heart   span, :active   .counter   span, :active   .counter.big   span{color:#7e4d4c}:active     app-heart-icon path, :active     app-heart-small-icon path{color:#ca494d}}.heart{display:flex;align-items:center;justify-content:center;background-color:#ffebef;border-radius:100px}.heart.small{height:32px;width:32px}.heart.big{background-color:#fef4f6;height:40px;width:40px}.counter{display:flex;align-items:center;justify-content:space-between;padding:2px 4px 2px 2px;gap:2px;font-size:10px;border-radius:40px;font-weight:600;margin-top:-4px;background-color:#ffebef}.counter.big{background-color:#ffdde0}
+9:{display:flex;flex-direction:column;gap:8px}@media (hover: hover) and (pointer: fine){:hover   .info   .serif{color:#ca494d}:hover   .info   .price{color:#7e4d4c}}@media (hover: none) and (pointer: coarse){:active   .info   .serif{color:#ca494d}:active   .info   .price{color:#7e4d4c}}.image{aspect-ratio:.836;width:100%;position:relative;border-radius:12px;-webkit-border-radius:12px;overflow:hidden;clip-path:inset(0 round 12px)}.image   img{object-fit:cover;width:100%;height:100%;filter:drop-shadow(-20px 10px 10px rgba(184,126,137,.6));border-radius:12px;-webkit-border-radius:12px}.image   app-product-like{position:absolute;bottom:4px;right:4px}.info{display:flex;flex-direction:column;gap:8px}.info   h1.serif, .info   h3.serif{color:#8e1500}.info   h3.serif, .info   .text-caption.default{display:none}.info   .price{color:#9b6a68}@media screen and (max-width: 1020px){.info{gap:0}.info   h1.serif, .info   .text-body.large{display:none}.info   h3.serif, .info   .text-caption.default{display:block}}
+11:{display:flex;flex-direction:column;width:100%;height:100%}.products-grid-container{width:100%;height:100%;overflow:auto}.products-grid{max-width:1600px;width:100%;flex:1;display:grid;grid-template-columns:repeat(4,1fr);padding:0 40px 120px;gap:24px 40px;margin:0 auto;position:relative}.products-grid > :nth-child(1), .products-grid > :nth-child(2), .products-grid > :nth-child(3), .products-grid > :nth-child(4){margin-top:16px}@media screen and (max-width: 1400px){.products-grid{grid-template-columns:repeat(3,1fr)}.products-grid > :nth-child(1), .products-grid > :nth-child(2), .products-grid > :nth-child(3){margin-top:16px}.products-grid > :nth-child(4){margin-top:0}.products-grid-container{background-size:50% auto}}@media screen and (max-width: 1020px){.products-grid{gap:16px 24px}}@media screen and (max-width: 750px){.products-grid{grid-template-columns:repeat(2,1fr);padding:0 16px 120px;gap:16px 8px}.products-grid > :nth-child(1), .products-grid > :nth-child(2){margin-top:16px}.products-grid > :nth-child(3){margin-top:0}.products-grid-container{background-size:100% auto}}
+15:{width:100%;display:flex;justify-content:center}button{height:56px;width:100%;padding:0 16px;display:flex;align-items:center;border-radius:80px;border:none;outline:none;position:relative}button   .child-content{width:100%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:14px;font-weight:450;gap:10px;white-space:nowrap;overflow:hidden}button   .leading{position:absolute;left:0;top:0}button.primary{background-color:#e88a92}@media (hover: hover) and (pointer: fine){button.primary:hover{background-color:#ec7476}}@media (hover: none) and (pointer: coarse){button.primary:active{background-color:#ec7476}}button.secondary{background-color:#f6cacf}@media (hover: hover) and (pointer: fine){button.secondary:hover{background-color:#e4b3b9}}@media (hover: none) and (pointer: coarse){button.secondary:active{background-color:#e4b3b9}}button.light{background-color:transparent}button.light   .child-content{color:#8e1500}@media (hover: hover) and (pointer: fine){button.light:hover   .child-content{color:#f9a67c}}@media (hover: none) and (pointer: coarse){button.light:active   .child-content{color:#f9a67c}}button.elevated{background-color:#ffdde0}button.elevated   .child-content{color:#8e1500}@media (hover: hover) and (pointer: fine){button.elevated:hover{background-color:#fed4d2}}@media (hover: none) and (pointer: coarse){button.elevated:active{background-color:#fed4d2}}button:disabled{background-color:#e3b9be}button:disabled.elevated   .child-content{color:#b89797}
+17:{display:flex;height:24px;width:24px;align-items:center;justify-content:center;cursor:pointer}@media (hover: hover) and (pointer: fine){:hover   path{color:#ca494d}}@media (hover: none) and (pointer: coarse){:active   path{color:#ca494d}}
+19:{display:flex;width:100%;height:calc(100svh - 32px);max-height:750px;overflow-x:hidden}.wrapper{height:100%;width:100%;background:#ffebef;border-radius:24px 24px 0 0;box-shadow:0 8px 10px -5px #0003,0 16px 24px 2px #00000024,0 6px 30px 5px #0000001f;transition:.1s}.bottom-sheet-handle{height:0;width:58px;display:flex;border:1.3px solid transparent;border-image:linear-gradient(90deg,#f7dcd3,#f1d1b7 39.5%,#dfbdb4);border-image-slice:1;position:absolute;top:12px;left:calc(50% - 29px)}.bottom-sheet-handle-trigger, .bottom-sheet-handle{display:none}.mobile{max-height:none;height:100%}.mobile   .bottom-sheet-handle-trigger{display:flex;width:100%;height:48px;position:absolute;top:0;left:0}.mobile   .bottom-sheet-handle{height:0;width:58px;display:flex;border:1.3px solid transparent;border-image:linear-gradient(90deg,#f7dcd3,#f1d1b7 39.5%,#dfbdb4);border-image-slice:1;position:absolute;top:12px;left:calc(50% - 29px)}@media screen and (max-width: 750px){{max-height:none;height:100%}}
+23:{width:100%;display:flex;position:relative;flex-direction:column;gap:4px}label{width:100%;height:100%;display:flex;gap:16px;border-radius:16px;padding:18px 16px;border:1px solid #f6cacf;font-weight:450}@media (hover: hover) and (pointer: fine){label:not(:focus-within):hover{background-color:#fff3ef}label:not(:focus-within):hover   textarea{background-color:#fff3ef}}@media (hover: none) and (pointer: coarse){label:not(:focus-within):active{background-color:#fff3ef}label:not(:focus-within):active   textarea{background-color:#fff3ef}}label   textarea{width:100%;outline:0;border:0;background:#ffebef;font-size:14px;font-style:italic;resize:none}label   textarea::placeholder{color:#b89797;font-style:italic}label:focus-within{border:2px solid #e4aab6}label   .icon{height:24px;width:24px}label.error{border:2px solid #a72a53}.hint-container{display:flex;min-height:20px;padding:0 16px;align-items:end}.hint-container   .text-body.small{color:#9b6a68}.hint-container   .error{color:#a72a53}.label{margin-bottom:16px;font-weight:450;color:#9b6a68}
+25:{display:flex}     app-modal-container .wrapper{display:flex;flex-direction:column;justify-content:space-between}h1{margin-top:20px;text-align:center}app-close{position:absolute;top:22px;right:16px}.container{display:flex;height:100%;width:438px;margin:40px auto 0;overflow:auto;flex-direction:column;gap:24px;border-radius:12px;padding-bottom:20px}.container   img{width:100%;aspect-ratio:1.68;object-fit:cover;border-radius:12px}.buttons-container{display:flex;position:unset;flex-direction:column;gap:4px;padding:16px 16px 8px;height:140px;align-items:center}.buttons-container   app-button{width:438px}@media screen and (max-width: 750px){{height:calc(100svh - 80px)}.container{padding:0 16px 16px;margin:24px 0 0;width:100%}.container   img{aspect-ratio:1.225}.buttons-container   app-button{width:100%}}
+27:{display:flex;align-items:center;gap:8px;font-size:16px;font-weight:600}@media (hover: hover) and (pointer: fine){:hover   svg   path{stroke:#ca494d}:hover   .primary{color:#ca494d}}@media (hover: none) and (pointer: coarse){:active   svg   path{stroke:#ca494d}:active   .primary{color:#ca494d}}.primary{color:#8e1500}
+29:{width:calc(100% + 40px);border-bottom:1px solid transparent;border-image:linear-gradient(90deg,#f7dcd3,#f1d1b7 39.5%,#dfbdb4);border-image-slice:1;margin-left:24px}
+31:{display:flex}
+33:{display:flex;gap:8px;align-items:center}.piece{color:#8e1500;text-decoration:underline;cursor:pointer}@media (hover: hover) and (pointer: fine){.piece:hover{color:#ca494d}}@media (hover: none) and (pointer: coarse){.piece:active{color:#ca494d}}.piece:last-child{text-decoration:none;color:#9b6a68;cursor:unset}.piece.joiner{text-decoration:none;cursor:unset}
+37:{display:flex;align-items:center;gap:8px;cursor:pointer}@media (hover: hover) and (pointer: fine){:hover     app-pencil-icon path, :hover     app-pencil-icon circle, :hover   .button-text.primary{color:#ca494d}}@media (hover: none) and (pointer: coarse){:active     app-pencil-icon   app-pencil-icon path, :active     app-pencil-icon   app-pencil-icon circle, :active     app-pencil-icon .button-text.primary{color:#ca494d}}.button-text.primary{color:#8e1500}
+39:{display:flex}     app-modal-container .wrapper{display:flex;flex-direction:column;justify-content:space-between}h1{margin-top:20px;text-align:center}app-close{position:absolute;top:22px;right:16px}.container{display:flex;height:100%;width:438px;margin:40px auto 0;overflow:auto;flex-direction:column;gap:16px;border-radius:12px;padding-bottom:20px}.container   h1{margin-top:0;text-align:start}.container   img{width:100%;aspect-ratio:1.15;object-fit:cover;border-radius:12px}.container   .packing-info{display:flex;flex-direction:column;gap:8px}.buttons-container{display:flex;position:unset;flex-direction:column;gap:4px;padding:16px 16px 8px;height:140px;align-items:center}.buttons-container   app-button{width:438px}@media screen and (max-width: 750px){{height:calc(100svh - 80px)}.container{padding:0 16px 16px;margin:24px 0 0;width:100%;gap:20px}.container   img{aspect-ratio:.8575}.buttons-container   app-button{width:100%}}
+41:{display:flex;flex-direction:column;padding-bottom:120px}.products-grid{max-width:1600px;width:100%;flex:1;display:grid;grid-template-columns:repeat(4,1fr);padding:0 40px 120px;gap:24px 16px;margin:0 auto}.empty{display:flex;flex-direction:column;align-items:center;gap:40px;margin:40px auto 0;width:100%;max-width:438px}.empty   .text-body.large{font-weight:400}.empty   .buttons-container{width:100%;padding:0 16px;display:flex;flex-direction:column;gap:8px}.pattern-background{background-size:33.3333333333% auto;top:516px}@media screen and (max-width: 1400px){.products-grid{grid-template-columns:repeat(3,1fr)}.pattern-background{background-size:50% auto}}@media screen and (max-width: 750px){.products-grid{grid-template-columns:repeat(2,1fr);padding:0 16px 120px;gap:16px 8px}.empty{margin-top:20px}.pattern-background{background-size:100% auto;top:508px}}
+43:{display:flex;gap:4px;align-items:center}h3, h1{white-space:pre-line;text-align:center;flex:1}
+45:{height:100%;display:flex;flex-direction:column;padding:0 16px}.delivery{height:100%;display:flex;flex-direction:column;padding-top:16px}.delivery   app-checkout-title{margin-bottom:16px}.delivery   .header{display:flex;justify-content:flex-end;padding:20px 0 60px}.delivery   .content{display:flex;justify-content:center;align-items:center;flex-direction:column;border-radius:20px;background-color:#ffdde0;padding:24px 16px;cursor:pointer}@media (hover: hover) and (pointer: fine){.delivery   .content:hover{background-color:#fed4d2}}@media (hover: none) and (pointer: coarse){.delivery   .content:active{background-color:#fed4d2}}.delivery   .content   span{color:#9b6a68}.delivery   .content__header{font-weight:450;font-size:24px;text-align:center;width:100%}.delivery   .content__description{width:100%;text-align:left;margin-top:8px;font-size:12px;line-height:16px;font-style:italic}.delivery   .content__description   span{text-align:center}.delivery   .cost{font-size:12px;padding:0 2px 40px 20px;margin:0 auto;width:438px}.delivery   .cost.dubai{display:flex;justify-content:center}.delivery   .cost   li{color:#9b6a68;line-height:16px}.scrollable{justify-content:space-between;display:flex;flex-direction:column;flex:1;flex-grow:1;overflow:auto}.scrollable   .container{display:flex;flex-direction:column;gap:20px;margin:auto;padding:20px;width:438px}.centred{text-align:center!important}.description-container{display:flex;flex-direction:column;width:100%}@media screen and (max-width: 750px){.scrollable{overflow-y:scroll}.scrollable   .container{margin:auto 0;width:unset;padding:40px 0}.delivery   .cost{margin:0;width:unset;padding-bottom:16px}}
+49:{width:100%;display:flex;flex-direction:column;gap:4px}label{width:100%;display:flex;align-items:center;gap:12px;position:relative;height:56px;border:1px solid #f6cacf;border-radius:16px;padding:0 16px}label   input{width:100%;outline:0;border:0;background:#ffebef;font-size:14px;font-style:italic}label   input::placeholder{color:#b89797;font-style:italic}label:focus-within{border:2px solid #e4aab6}@media (hover: hover) and (pointer: fine){label:not(:focus-within):hover{background-color:#fff3ef}label:not(:focus-within):hover   input{background-color:#fff3ef}}@media (hover: none) and (pointer: coarse){label:not(:focus-within):active{background-color:#fff3ef}label:not(:focus-within):active   input{background-color:#fff3ef}}label   span{position:absolute;padding:0 4px;left:12px;top:-10px;border-radius:4px;font-size:12px;line-height:16px;transition:.3s;color:#9b6a68}label   .icon{height:24px;width:24px}label.floating-label   span{top:18px;left:16px;font-size:14px;line-height:20px;color:#b89797;font-style:italic}label.floating-label   span.with-leading{left:52px}label.floating-label   .floating{transform:translateY(-27px);font-size:12px;line-height:16px;font-style:normal;color:#9b6a68;background-color:#ffebef}label.floating-label   .floating.with-leading{transform:translateY(-27px) translate(-36px)}label.error{border:2px solid #a72a53}.hint-container{display:flex;min-height:20px;padding:0 16px 12px;align-items:end}.hint-container   .error{font-size:12px;line-height:16px;color:#a72a53}.hint-container   .hint{color:#9b6a68}.label{color:#b89797}
+51:{background-color:#e88a92;width:100%;display:flex;padding:12px;border-radius:16px;font-size:16px;font-weight:450;justify-content:space-between;align-items:center}@media (hover: hover) and (pointer: fine){:hover{background-color:#ec7476}}@media (hover: none) and (pointer: coarse){:active{background-color:#ec7476}}
+53:{display:flex;justify-content:center;padding:4px;border:1px solid #e4aab6;border-radius:24px;gap:4px}button{height:32px!important;white-space:nowrap;background-color:#f6cacf;border:none;outline:none;color:#fff;flex:1;border-radius:4px;display:flex;align-items:center;justify-content:center;gap:2px}@media (hover: hover) and (pointer: fine){button:hover{background-color:#e4b3b9}}@media (hover: none) and (pointer: coarse){button:active{background-color:#e4b3b9}}button.active{background-color:#e88a92}@media (hover: hover) and (pointer: fine){button.active:hover{background-color:#e88a92}}@media (hover: none) and (pointer: coarse){button.active:active{background-color:#e88a92}}button:first-child{border-radius:24px 4px 4px 24px}button:last-child{border-radius:4px 24px 24px 4px}
+55:{display:flex;background-color:#fef4f6;border-radius:20px;padding:4px;margin:0 auto;gap:4px;width:438px}.tab{display:flex;align-items:center;justify-content:center;gap:4px;padding:8px 0;flex:1;font-weight:450;background-color:transparent;border-radius:16px;transition:.3s}.tab   span{line-height:12px;color:#b89797;font-size:10px}.tab.past{background-color:#ffebef}.tab.past   span{color:#8e1500}.tab.active{background-color:#ffdde0}.tab.active   span{color:#9b6a68}@media screen and (max-width: 750px){{margin:0 20px;width:unset}}
+65:{padding:16px 0 0;max-height:100%;height:100%;width:100%;overflow:hidden;display:flex;flex-direction:column}.input{margin:4px 0}.mobile-bottom-bar   .secondary{color:#747474;font-size:14px}.mobile-bottom-bar   .primary{color:#383838;font-size:14px;font-weight:700}.header{color:#9b6a68;margin-bottom:16px;font-weight:450;margin-top:10px}.header.primary{color:#8e1500}.button{margin:4px 0}.house-container{display:flex;gap:16px}.round{background-color:#f8f8f8;font-size:12px;border-radius:100px;padding:8px 10px;line-height:10px;height:min-content}.previous{color:#fff;background-color:#c7c7c7}.active-button{background-color:#fff}.hint{font-size:14px;padding-bottom:12px;padding-top:16px;color:#b9aeae}.hint   .response{color:#9b6a68}app-checkbox{margin-bottom:56px}app-time-picker{margin-bottom:10px}.delivery-date-warning{color:#9b6a68;margin-bottom:24px}.delivery-container{position:relative}.courier-note{margin-top:24px}
+69:{padding:16px 0 0;max-height:100%;height:100%;width:100%;overflow:hidden;display:flex;flex-direction:column}.input{margin:4px 0}.mobile-bottom-bar   .secondary{color:#747474;font-size:14px}.mobile-bottom-bar   .primary{color:#383838;font-size:14px;font-weight:700}.button{margin:4px 0}.previous{color:#fff;background-color:#c7c7c7}.active-recepient{background-color:#fff}.house-container{display:flex;gap:16px}.delivery-container{position:relative}.header{color:#9b6a68;margin-bottom:16px;font-weight:450;margin-top:10px}.header.primary{color:#8e1500}app-checkbox{margin-bottom:56px}.hint{font-size:14px;padding-bottom:12px;padding-top:16px;color:#b9aeae}.hint   .response{color:#9b6a68}.map-container{margin:16px 0 24px}
+71:{padding:16px 0 0;max-height:100%;height:100%;width:100%;overflow:hidden;display:flex;flex-direction:column}.input, .button{margin:4px 0}.previous{color:#fff;background-color:#c7c7c7}.active-recepient{background-color:#fff}.header{margin-bottom:16px;font-weight:450;margin-top:10px;color:#9b6a68}.header.primary{color:#8e1500}.map-container{margin-bottom:24px}app-checkbox{margin-bottom:56px}
+73:{padding:16px;display:grid;grid-template-columns:1fr 2fr;gap:12px}.image{display:flex;flex-direction:column;width:100%;gap:8px}.image   .product-image{border-radius:16px;object-fit:cover;width:100%;aspect-ratio:1}.image   .nova-post{display:flex;align-items:center;gap:4px}.image   .nova-post   span{color:#9b6a68}.details{display:flex;flex-direction:column;justify-content:space-between}.details   .lines   .line{display:flex;margin-bottom:4px;justify-content:space-between;align-items:end;gap:8px}.details   .lines   .line   .primary{color:#8e1500}.details   .lines   .line   .text-caption.default{color:#9b6a68}.details   .lines   .line:first-child{align-items:start}.details   .lines   .line:first-child   span{line-height:20px;white-space:nowrap;margin-top:1.2px}
+75:{height:100%;display:flex;flex-direction:column;padding:18px 0 0}app-checkout-title{margin-bottom:40px}.explanation{text-align:center;white-space:pre-line;margin-bottom:24px;padding:0 16px}.error-container{display:flex;gap:8px;padding-left:16px;margin-bottom:12px}.error-container   h3{color:#a72a53}.error-container   .text-decoration-underline{margin-bottom:4px}.order-items{display:flex;flex-direction:column;flex:1;overflow:auto}.order-items   app-order-item{flex-grow:unset}.explanation, .error-container, .order-items{width:438px;margin-left:auto;margin-right:auto}.buttons-container{display:flex;flex-direction:column;gap:4px;padding:16px 16px 4px;align-items:center}.buttons-container   app-button{width:438px}@media screen and (max-width: 750px){.explanation, .error-container, .order-items{width:100%;margin-left:0;margin-right:0}.buttons-container{align-items:start}.buttons-container   app-button{width:100%}}
+77:{padding:16px 0 0;max-height:100%;height:100%;width:100%;overflow:hidden;display:flex;flex-direction:column}.house-container{display:flex;gap:16px}.nova-post-hint{color:#9b6a68;margin-bottom:68px}.departure-date-info{display:flex;flex-direction:column;gap:8px;margin-bottom:16px}.departure-date-info   span, .departure-date-info   strong{color:#9b6a68}.delivery-dates-container{display:flex;flex-direction:column;gap:8px;margin-bottom:24px}.delivery-dates{display:flex;flex-wrap:wrap;gap:8px}.delivery-dates   .date{border-radius:50px;padding:1px;background:linear-gradient(90deg,#f7dcd3,#f1d1b7 39.5%,#dfbdb4)}@media (hover: hover) and (pointer: fine){.delivery-dates   .date:hover   .surface{background-color:#fff3ef}}@media (hover: none) and (pointer: coarse){.delivery-dates   .date:active   .surface{background-color:#fff3ef}}.delivery-dates   .date   .surface{background:#fef4f6;padding:8px 10px;border-radius:50px;display:flex;align-items:center;gap:8px;height:100%}.delivery-dates   .date   span{color:#9b6a68}.delivery-dates   .date.selected{padding:0;background:#e88a92}@media (hover: hover) and (pointer: fine){.delivery-dates   .date.selected:hover   .surface{background-color:#ec7476}}@media (hover: none) and (pointer: coarse){.delivery-dates   .date.selected:active   .surface{background-color:#ec7476}}.delivery-dates   .date.selected   .surface{background:#e88a92;padding:10px 12px}.delivery-dates   .date.selected   span{color:#fff}
+79:{display:flex}     app-switcher{margin:0 0 16px}     app-namelaka-intl-tel{margin-top:4px}     app-modal-container .bottom-sheet-handle,      app-modal-container .bottom-sheet-handle-trigger{display:none!important}     app-modal-container .wrapper{border-radius:0}     .container{padding:26px 16px 20px}     app-tabs{margin-top:16px;margin-bottom:36px}     .mobile-bottom-bar{background-color:#ffdde0;flex-direction:column;height:max-content;padding:16px;border-top:1px solid transparent;border-image:linear-gradient(90deg,#f7dcd3,#f1d1b7 39.5%,#dfbdb4);border-image-slice:1;position:unset;align-items:center}     .mobile-bottom-bar .buttons-container{width:438px;display:flex;gap:8px}     .mobile-bottom-bar .buttons-container app-button{width:unset;margin:0!important}     .mobile-bottom-bar .buttons-container app-button:last-child{flex:1}     .mobile-bottom-bar.summary .price-container{width:438px;display:flex;flex-direction:column;gap:8px;margin-bottom:12px}     .mobile-bottom-bar.summary .price{display:flex;color:#b9aeae;font-size:14px;gap:4px}     .mobile-bottom-bar.summary .price .secondary{color:#9b6a68}     app-time-picker{margin-bottom:24px}     .section-title{padding:0 0 16px}     .delivery-container{overflow:auto;padding:0 16px;display:flex;flex-direction:column;align-items:center;flex:1}     .delivery-container>*{width:438px}     app-button span{color:#fff}     .disable-scroll{overflow:hidden!important}     .hidden{display:none}     app-time-picker-bottom-sheet{position:absolute}@media screen and (max-width: 750px){{height:100dvh}     .delivery-container{align-items:start;overflow:scroll}     .delivery-container>*{width:100%}     app-tabs{margin-top:12px;margin-bottom:24px}     .mobile-bottom-bar{align-items:unset}     .mobile-bottom-bar .buttons-container{width:100%}     .mobile-bottom-bar.summary .price-container{width:100%}}
+81:{display:flex}     app-modal-container .wrapper{display:flex;flex-direction:column;justify-content:space-between}h1{margin-top:20px;text-align:center}app-close{position:absolute;top:22px;right:16px}app-return-arrow{margin:40px auto 0;width:438px}.container{display:flex;height:100%;width:438px;margin:24px auto 0;overflow:auto;flex-direction:column;gap:24px;border-radius:12px;padding-bottom:20px}.container   img{width:100%;aspect-ratio:1.68;object-fit:cover;border-radius:12px}.buttons-container{display:flex;position:unset;flex-direction:column;gap:4px;padding:16px 16px 8px;height:140px;align-items:center}.buttons-container   app-button{width:438px}@media screen and (max-width: 750px){{height:calc(100svh - 80px)}.container{padding:0 16px;margin:24px 0 0;width:100%}.container   img{aspect-ratio:1.225}.buttons-container   app-button{width:100%}}
+83:{padding:16px;display:flex;flex-direction:column;gap:12px;align-items:center}.overal{background-color:#ffdde0} > *{max-width:438px;width:100%}.button-text.primary{color:unset}.order-totals-container{display:flex;flex-direction:column}.order-totals-container   .totals-price{display:flex;flex-direction:column;margin:32px 0 16px;gap:8px}.order-totals-container   .totals-price   span{font-size:14px}.max-order-total-warning{background-color:#ffebef;border:1px solid #f9a67c;padding:8px 12px;border-radius:20px}.order-letter-container{display:flex;flex-direction:column;gap:12px;background-color:#fef4f6;align-items:center;border-radius:20px;padding:12px}@media (hover: hover) and (pointer: fine){.order-letter-container:hover.empty{background-color:#fff3ef}}@media (hover: none) and (pointer: coarse){.order-letter-container:active.empty{background-color:#fff3ef}}.order-letter-container   .line{width:100%;display:flex;justify-content:space-between;align-items:center;gap:8px}.order-letter-container   .line   h3{color:#8e1500}.order-letter-container   .letter-text{max-width:70%;white-space:nowrap;text-overflow:ellipsis;overflow:hidden;align-items:center}.order-letter-container   .icon{display:flex;align-items:center;justify-content:center;background-color:#f9a67c;border-radius:50px}@media (hover: hover) and (pointer: fine){.order-letter-container   .icon:hover{background-color:#f57e42}}@media (hover: none) and (pointer: coarse){.order-letter-container   .icon:active{background-color:#f57e42}}@media screen and (max-width: 750px){{align-items:unset;padding:16px 16px 24px} > *{max-width:none}}
+
+================================================================
+## DOM SNAPSHOT CHECK
+
+CMD: wc -c '/Users/a1111/projects/namelaka-stage1/assets/original-dom/ua-home-app-root.html'; head -c 300 '/Users/a1111/projects/namelaka-stage1/assets/original-dom/ua-home-app-root.html'; echo
+
+   62749 /Users/a1111/projects/namelaka-stage1/assets/original-dom/ua-home-app-root.html
+<app-root ng-version="19.1.4" _nghost-ng-c3183128145=""><app-header _ngcontent-ng-c3183128145="" _nghost-ng-c3037609483=""><div _ngcontent-ng-c3037609483="" class="icons-container"><!----><!----><app-burger-icon _ngcontent-ng-c3037609483="" class="cursor-pointer" _nghost-ng-c609400430=""><svg _ngcon
