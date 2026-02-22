@@ -54,9 +54,13 @@ app-header {
   }
 }
 
-/* Header cart button (not the cart page) */
+/* Header cart button (not the cart page).
+   flex: none prevents the generic .cart{flex:1} from the cart-page component
+   CSS (original-components.css) from expanding this button to full column width. */
 app-header .cart {
   display: flex;
+  flex: none;
+  flex-direction: row;
   align-items: center;
   gap: 8px;
   position: relative;
@@ -64,8 +68,10 @@ app-header .cart {
   background-color: #e88a92;
   border-radius: 80px;
   width: fit-content;
+  max-width: 160px;
   margin-left: auto;
   cursor: pointer;
+  overflow: visible;
 }
 
 @media screen and (max-width: 750px) {
