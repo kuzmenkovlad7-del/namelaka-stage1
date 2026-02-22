@@ -13,6 +13,7 @@
 **/.cache/
 
 # local runtime data (НЕ пушим)
+.local-data/
 app/.local-data/
 
 # OS/editor

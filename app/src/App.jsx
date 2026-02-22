@@ -2,7 +2,6 @@ import React from 'react'
 import * as Pages from './pages.jsx'
 import { getCategories, getProducts } from './api.js'
 import { normalizeCategory, normalizeProduct } from './lib/normalizeProduct.js'
-import { loadOriginalSnapshot } from './lib/originalSnapshot.js'
 
 function parseRoute() {
   const url = new URL(window.location.href)
@@ -11,8 +10,11 @@ function parseRoute() {
   let locale = 'uk'
   let rest = parts
 
-  if (parts[0] === 'ua' || parts[0] === 'en') {
-    locale = parts[0] === 'ua' ? 'uk' : 'en'
+  if (parts[0] === 'ua') {
+    locale = 'uk'
+    rest = parts.slice(1)
+  } else if (parts[0] === 'en') {
+    locale = 'en'
     rest = parts.slice(1)
   }
 
@@ -30,32 +32,23 @@ export default function App() {
   const [route, setRoute] = React.useState(() => parseRoute())
   const [loading, setLoading] = React.useState(true)
   const [error, setError] = React.useState('')
-  const [snapshot, setSnapshot] = React.useState({ headerHtml: '', categoriesHtml: '', demoCards: [] })
   const [categories, setCategories] = React.useState([])
   const [products, setProducts] = React.useState([])
 
+  // SPA navigation: intercept anchor clicks and popstate
   React.useEffect(() => {
     const onNav = () => setRoute(parseRoute())
     window.addEventListener('popstate', onNav)
-
-    const onClick = (e) => {
-      const a = e.target.closest('a[href]')
-      if (!a) return
-      const href = a.getAttribute('href') || ''
-      if (!href.startsWith('/')) return
-      if (a.target === '_blank') return
-      e.preventDefault()
-      window.history.pushState({}, '', href)
-      setRoute(parseRoute())
-    }
-
-    document.addEventListener('click', onClick)
-    return () => {
-      window.removeEventListener('popstate', onNav)
-      document.removeEventListener('click', onClick)
-    }
+    return () => window.removeEventListener('popstate', onNav)
   }, [])
 
+  const navigate = React.useCallback((href) => {
+    window.history.pushState({}, '', href)
+    setRoute(parseRoute())
+    window.scrollTo(0, 0)
+  }, [])
+
+  // Bootstrap: load categories and products from adapter
   React.useEffect(() => {
     let cancelled = false
 
@@ -64,66 +57,55 @@ export default function App() {
         setLoading(true)
         setError('')
 
-        const [snap, catsRaw, prodsRaw] = await Promise.all([
-          loadOriginalSnapshot(),
+        const [catsRaw, prodsRaw] = await Promise.all([
           getCategories(),
           getProducts(),
         ])
 
         if (cancelled) return
 
-        const cats = Array.isArray(catsRaw) ? catsRaw.map(normalizeCategory) : []
-        const demoCards = Array.isArray(snap?.demoCards) ? snap.demoCards : []
-        const prods = Array.isArray(prodsRaw)
-          ? prodsRaw.map((p, i) => normalizeProduct(p, i, demoCards[i] || demoCards[i % Math.max(demoCards.length, 1)] || null))
+        const cats = Array.isArray(catsRaw)
+          ? catsRaw.map(normalizeCategory).sort((a, b) => a.rank - b.rank)
           : []
 
-        setSnapshot(snap)
-        setCategories(cats.sort((a, b) => a.rank - b.rank))
+        const prods = Array.isArray(prodsRaw)
+          ? prodsRaw.map((p, i) => normalizeProduct(p, i, null))
+          : []
+
+        setCategories(cats)
         setProducts(prods)
       } catch (err) {
-        console.error(err)
-        if (!cancelled) setError(err?.message || 'Failed to load stage1 data')
+        console.error('[App] boot error:', err)
+        if (!cancelled) setError(err?.message || 'Failed to load data')
       } finally {
         if (!cancelled) setLoading(false)
       }
     }
 
     boot()
-    return () => {
-      cancelled = true
-    }
+    return () => { cancelled = true }
   }, [])
 
   if (loading) {
-    return <div className="stage1-boot">Loading…</div>
+    return <div className="stage1-boot">Завантаження…</div>
   }
 
   if (error) {
     return <div className="stage1-boot stage1-error">{error}</div>
   }
 
-  const common = { locale: route.locale, snapshot, categories, products }
-
-  if (route.type === 'home') {
-    return <Pages.HomePage {...common} />
+  const common = {
+    locale: route.locale,
+    categories,
+    products,
+    onNavigate: navigate,
   }
 
-  if (route.type === 'catalog') {
-    return <Pages.CatalogPage {...common} />
-  }
-
-  if (route.type === 'category') {
-    return <Pages.CategoryPage {...common} categoryId={route.categoryId} />
-  }
-
-  if (route.type === 'product') {
-    return <Pages.ProductPage {...common} productId={route.productId} />
-  }
-
-  if (route.type === 'search') {
-    return <Pages.SearchPage {...common} query={route.query} />
-  }
+  if (route.type === 'home') return <Pages.HomePage {...common} />
+  if (route.type === 'catalog') return <Pages.CatalogPage {...common} />
+  if (route.type === 'category') return <Pages.CategoryPage {...common} categoryId={route.categoryId} />
+  if (route.type === 'product') return <Pages.ProductPage {...common} productId={route.productId} />
+  if (route.type === 'search') return <Pages.SearchPage {...common} query={route.query} />
 
   return <Pages.NotFoundPage {...common} />
 }

@@ -23,7 +23,7 @@ export function normalizeCategory(cat, index = 0) {
   }
 }
 
-export function normalizeProduct(raw, index = 0, demo = null) {
+export function normalizeProduct(raw, index = 0, _demo = null) {
   const priceFromRaw =
     raw?.price ??
     raw?.calculated_price ??
@@ -31,28 +31,32 @@ export function normalizeProduct(raw, index = 0, demo = null) {
     raw?.variants?.[0]?.prices?.[0]?.amount ??
     null
 
-  const title = raw?.title || raw?.name || demo?.title || `Product ${index + 1}`
-  const description =
-    raw?.description ||
-    raw?.subtitle ||
-    raw?.short_description ||
-    demo?.description ||
-    ''
+  const title = raw?.title || raw?.name || `Product ${index + 1}`
+  const description = raw?.description || raw?.subtitle || raw?.short_description || ''
 
   const image =
     raw?.thumbnail ||
     firstImage(raw?.images) ||
-    demo?.image ||
     null
 
-  const heartsRaw = raw?.hearts ?? raw?.metadata?.hearts ?? demo?.hearts ?? 0
+  const heartsRaw = raw?.hearts ?? raw?.metadata?.hearts ?? 0
   const hearts = Number.parseInt(String(heartsRaw).replace(/[^\d]/g, ''), 10) || 0
 
   const priceText =
     formatPriceUA(priceFromRaw) ||
     raw?.price_text ||
-    demo?.priceText ||
     ''
+
+  // Category linkage — the adapter resolves product_category_id via its
+  // guessCategoryId() function (title/handle keyword matching) before sending
+  // the payload. Both product_category_id and categoryId fields are set there.
+  const categoryId =
+    raw?.product_category_id ||
+    raw?.categoryId ||
+    raw?.category_id ||
+    raw?.category?.id ||
+    raw?.metadata?.category_id ||
+    null
 
   return {
     id: raw?.id || `demo-${index + 1}`,
@@ -63,11 +67,8 @@ export function normalizeProduct(raw, index = 0, demo = null) {
     hearts,
     priceText,
     oldPriceText: raw?.oldPrice ? formatPriceUA(raw.oldPrice) : '',
-    categoryId:
-      raw?.product_category_id ||
-      raw?.category_id ||
-      raw?.metadata?.category_id ||
-      null,
+    categoryId,
+    product_category_id: categoryId,
     raw,
   }
 }
