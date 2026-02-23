@@ -48,20 +48,35 @@ body {
     background-color: transparent;
   }
 
-  /* All layout shells: transparent so body colour is visible */
+  /* All top-level layout shells: transparent so body colour is visible */
   app-root:hover,
   app-catalog:hover,
   .main:hover,
   .main.content-below-sidebar:hover,
   .products-grid-container:hover,
-  .products-grid:hover,
-  app-product-card:hover {
+  .products-grid:hover {
     background-color: transparent;
   }
 
-  /* Header keeps its own solid pink */
+  /* Header and its inner columns: keep header pink, columns transparent */
   app-header:hover {
     background-color: #ffebef;
+  }
+
+  app-header .icons-container:hover,
+  app-header .logo-container:hover,
+  app-header .cart-container:hover {
+    background-color: transparent;
+  }
+
+  /* Icon buttons: subtle tint on hover, never red */
+  .hdr-icon-btn:hover {
+    background-color: rgba(142, 21, 0, 0.06) !important;
+  }
+
+  /* Cart button in header: slightly darker pink on hover */
+  app-header .cart:hover {
+    background-color: #d97980 !important;
   }
 
   /* Category strip: inherit from body */
@@ -69,10 +84,124 @@ body {
     background-color: inherit;
   }
 
-  /* Product card image: subtle scale, no background flash */
+  /* Product card: keep transparent, subtle scale on image */
+  app-product-card:hover {
+    background-color: transparent;
+  }
+
   app-product-card:hover .image img {
     transform: scale(1.02);
     transition: transform 0.22s ease;
+  }
+
+  app-product-card .image:hover,
+  app-product-card .info:hover {
+    background-color: transparent !important;
+  }
+
+  /* Product like widget */
+  app-product-like:hover {
+    background-color: transparent;
+  }
+
+  /* Product detail page containers: keep white-tint backgrounds */
+  .product-page:hover,
+  .product-page-media:hover {
+    background-color: transparent;
+  }
+
+  .product-page-info:hover {
+    background-color: rgba(255, 255, 255, 0.4);
+  }
+
+  /* Cart page */
+  .cart-page:hover,
+  .cart-page-items:hover,
+  .cart-page-header:hover {
+    background-color: transparent;
+  }
+
+  .cart-page-item:hover {
+    background-color: rgba(255, 255, 255, 0.4);
+  }
+
+  .cart-page-summary:hover {
+    background-color: rgba(255, 255, 255, 0.4);
+  }
+
+  /* Checkout page */
+  .checkout-page:hover,
+  .checkout-layout:hover,
+  .checkout-sidebar:hover,
+  .checkout-items:hover,
+  .checkout-form:hover {
+    background-color: transparent;
+  }
+
+  .checkout-section:hover {
+    background-color: rgba(255, 255, 255, 0.4);
+  }
+
+  .mapbox-area:hover {
+    background: linear-gradient(135deg, #f5dfe4 0%, #ead6da 100%) !important;
+  }
+
+  .stripe-area:hover {
+    background-color: rgba(255, 255, 255, 0.35) !important;
+  }
+
+  .stripe-card-mock:hover {
+    background-color: rgba(255, 255, 255, 0.7) !important;
+  }
+
+  /* Gradient placeholders: keep their gradient, never turn red */
+  .product-img-placeholder:hover,
+  .product-page-img-placeholder:hover,
+  .cart-drawer-item-placeholder:hover,
+  .cart-page-item-placeholder:hover,
+  .search-result-img-placeholder:hover {
+    background: linear-gradient(135deg, #fff4f6 0%, #fde8ec 100%) !important;
+  }
+
+  /* Search result thumbnails */
+  .search-result-img:hover {
+    background-color: #fff4f6 !important;
+  }
+
+  /* Drawers and panels: keep their own backgrounds */
+  .drawer:hover,
+  .drawer-header:hover,
+  .drawer-close:hover,
+  .search-panel:hover,
+  .search-panel-header:hover {
+    background-color: #ffebef !important;
+  }
+
+  .drawer-nav:hover,
+  .search-results:hover {
+    background-color: #ffebef;
+  }
+
+  /* Cart drawer inner areas */
+  .cart-drawer-items:hover,
+  .cart-drawer-footer:hover,
+  .cart-drawer-empty:hover {
+    background-color: transparent;
+  }
+
+  .cart-drawer-item:hover {
+    background-color: rgba(255, 255, 255, 0.2);
+  }
+
+  /* Search / cart page utility areas */
+  .search-page:hover,
+  .search-page-form:hover {
+    background-color: transparent;
+  }
+
+  /* Stage1 empty state box */
+  .stage1-empty:hover {
+    background-color: rgba(255, 255, 255, 0.35);
   }
 }
 
@@ -115,14 +244,15 @@ app-header {
 .hdr-icon-btn {
   background: none;
   border: none;
-  padding: 8px;
+  padding: 10px;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 8px;
+  border-radius: 50%;
   color: #8e1500;
   flex-shrink: 0;
+  transition: background-color 0.15s ease;
 }
 
 /* icons-container: row of icon buttons */
@@ -130,6 +260,51 @@ app-header .icons-container {
   display: flex;
   align-items: center;
   gap: 4px;
+}
+
+/* Logo container: centred in the middle column */
+app-header .logo-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+app-header .logo-container a {
+  display: flex;
+  align-items: center;
+  text-decoration: none;
+}
+
+app-header .logo-container img {
+  height: 36px;
+  width: auto;
+}
+
+/* Cart container: aligns button to the right */
+app-header .cart-container {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+/* Badge on cart button */
+.cart__badge {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  background: #8e1500;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  min-width: 18px;
+  height: 18px;
+  border-radius: 9px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 4px;
+  line-height: 1;
+  border: 2px solid #ffebef;
 }
 
 /* Header cart button.
@@ -142,15 +317,17 @@ app-header .cart {
   align-items: center;
   gap: 8px;
   position: relative;
-  padding: 8px 16px;
+  padding: 8px 20px;
   background-color: #e88a92;
-  border-radius: 80px;
+  border-radius: 28px;
   width: fit-content;
-  max-width: 160px;
+  white-space: nowrap;
   margin-left: auto;
   cursor: pointer;
   overflow: visible;
   border: none;
+  transition: background-color 0.18s ease;
+  color: #fff;
 }
 
 @media screen and (max-width: 750px) {
