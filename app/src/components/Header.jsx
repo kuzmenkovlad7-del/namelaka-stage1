@@ -3,9 +3,20 @@ import React from 'react'
 /**
  * Header component matching the original Angular app-header structure.
  * Layout: 3-column grid (icons | logo | cart)
- * Class names match the original exactly so original-components.css applies.
+ *
+ * All interactive buttons are wired:
+ *   - Burger icon → onMenuOpen()
+ *   - Search icon → onSearchOpen()
+ *   - Cart button → onCartOpen()
  */
-export default function Header({ locale = 'uk', onNavigate }) {
+export default function Header({
+  locale = 'uk',
+  onNavigate,
+  cartCount = 0,
+  onMenuOpen,
+  onSearchOpen,
+  onCartOpen,
+}) {
   const nav = (href) => (e) => {
     e.preventDefault()
     if (onNavigate) onNavigate(href)
@@ -15,25 +26,38 @@ export default function Header({ locale = 'uk', onNavigate }) {
     <app-header>
       {/* Left column: burger + search */}
       <div className="icons-container">
-        <svg
-          className="cursor-pointer"
-          width="24"
-          height="24"
-          viewBox="0 0 24 24"
-          fill="none"
-          xmlns="http://www.w3.org/2000/svg"
-          aria-label="Menu"
+        <button
+          className="hdr-icon-btn cursor-pointer"
+          onClick={() => onMenuOpen?.()}
+          aria-label="Меню"
+          type="button"
         >
-          <path d="M4 6H20" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" stroke="currentColor" />
-          <path d="M4 12H20" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" stroke="currentColor" />
-          <path d="M4 18H20" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" stroke="currentColor" />
-        </svg>
-        <img
-          src="/original-assets/assets/icons/search-primary.svg"
-          alt="search"
-          className="cursor-pointer"
-          onError={(e) => { e.currentTarget.style.visibility = 'hidden' }}
-        />
+          <svg
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path d="M4 6H20" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" stroke="currentColor" />
+            <path d="M4 12H20" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" stroke="currentColor" />
+            <path d="M4 18H20" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" stroke="currentColor" />
+          </svg>
+        </button>
+        <button
+          className="hdr-icon-btn cursor-pointer"
+          onClick={() => onSearchOpen?.()}
+          aria-label="Пошук"
+          type="button"
+        >
+          <img
+            src="/original-assets/assets/icons/search-primary.svg"
+            alt="search"
+            width="24"
+            height="24"
+            onError={(e) => { e.currentTarget.style.visibility = 'hidden' }}
+          />
+        </button>
       </div>
 
       {/* Center column: logo */}
@@ -49,8 +73,13 @@ export default function Header({ locale = 'uk', onNavigate }) {
       </div>
 
       {/* Right column: cart */}
-      <div className="cart-container cursor-pointer">
-        <div className="cart">
+      <div className="cart-container">
+        <button
+          className="cart cursor-pointer"
+          onClick={() => onCartOpen?.()}
+          aria-label="Кошик"
+          type="button"
+        >
           <span className="button-text primary desktop-block mobile-hidden">Кошик</span>
           <img
             src="/original-assets/assets/icons/cart-secondary.svg"
@@ -58,8 +87,8 @@ export default function Header({ locale = 'uk', onNavigate }) {
             onError={(e) => { e.currentTarget.style.visibility = 'hidden' }}
           />
           <span className="text-caption small mobile-block desktop-hidden">Кошик</span>
-          <span className="cart__badge">0</span>
-        </div>
+          {cartCount > 0 && <span className="cart__badge">{cartCount}</span>}
+        </button>
       </div>
     </app-header>
   )
