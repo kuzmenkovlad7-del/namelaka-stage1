@@ -12,17 +12,29 @@ function slugOrIdMatch(routeValue, category) {
   return routeValue === category.id || routeValue === category.handle
 }
 
+/* ─── Back arrow icon ────────────────────────────────────────────────── */
+function BackArrow() {
+  return (
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none"
+         xmlns="http://www.w3.org/2000/svg" style={{ flexShrink: 0 }}>
+      <path d="M19 12H5" strokeWidth="1.3" strokeLinecap="round"
+            strokeLinejoin="round" stroke="currentColor" />
+      <path d="M12 19l-7-7 7-7" strokeWidth="1.3" strokeLinecap="round"
+            strokeLinejoin="round" stroke="currentColor" />
+    </svg>
+  )
+}
+
 /**
  * PageShell – wraps every page with the original site chrome:
  *   app-root
  *     app-header
  *     app-categories (category strip)
- *     .main.content-below-sidebar.categories-margin.pattern
+ *     .main
  *       {children}
  *
  * Uses React components with original class names so both
  * styles-ZBSN6PDF.css and original-components.css apply correctly.
- * No dangerouslySetInnerHTML / snapshot injection needed.
  */
 export function PageShell({
   locale = 'uk',
@@ -33,7 +45,7 @@ export function PageShell({
 }) {
   return (
     <app-root>
-      {/* Fixed background pattern (original: .pattern-background element) */}
+      {/* Fixed background pattern */}
       <div
         className="pattern-background"
         style={{
@@ -65,6 +77,10 @@ export function PageShell({
   )
 }
 
+/* ======================================================================
+   Home / Catalog pages
+   ====================================================================== */
+
 export function HomePage({ locale = 'uk', products = [], categories = [], onNavigate }) {
   return (
     <PageShell locale={locale} categories={categories} onNavigate={onNavigate}>
@@ -73,6 +89,7 @@ export function HomePage({ locale = 'uk', products = [], categories = [], onNavi
           locale={locale}
           products={products}
           emptyText={t(locale, 'Товарів поки немає', 'No products yet')}
+          onNavigate={onNavigate}
         />
       </app-catalog>
     </PageShell>
@@ -87,11 +104,16 @@ export function CatalogPage({ locale = 'uk', products = [], categories = [], onN
           locale={locale}
           products={products}
           emptyText={t(locale, 'Товарів поки немає', 'No products yet')}
+          onNavigate={onNavigate}
         />
       </app-catalog>
     </PageShell>
   )
 }
+
+/* ======================================================================
+   Category page
+   ====================================================================== */
 
 export function CategoryPage({
   locale = 'uk',
@@ -102,10 +124,10 @@ export function CategoryPage({
 }) {
   const category = categories.find((c) => slugOrIdMatch(categoryId, c))
 
-  // Filter products to this category only.
-  // Falls back to showing all products if the category is unknown (shouldn't happen in prod).
   const filtered = category
-    ? products.filter((p) => p.categoryId === category.id || p.product_category_id === category.id)
+    ? products.filter(
+        (p) => p.categoryId === category.id || p.product_category_id === category.id
+      )
     : []
 
   return (
@@ -120,7 +142,12 @@ export function CategoryPage({
           <ProductGrid
             locale={locale}
             products={filtered}
-            emptyText={t(locale, 'У цій категорії поки немає товарів', 'No products in this category yet')}
+            emptyText={t(
+              locale,
+              'У цій категорії поки немає товарів',
+              'No products in this category yet'
+            )}
+            onNavigate={onNavigate}
           />
         ) : (
           <div className="stage1-empty">
@@ -132,6 +159,10 @@ export function CategoryPage({
   )
 }
 
+/* ======================================================================
+   Product detail page
+   ====================================================================== */
+
 export function ProductPage({
   locale = 'uk',
   productId,
@@ -140,6 +171,8 @@ export function ProductPage({
   onNavigate,
 }) {
   const product = products.find((p) => p.id === productId || p.handle === productId)
+
+  const backHref = `/${locale === 'uk' ? 'ua' : locale}`
 
   return (
     <PageShell locale={locale} categories={categories} onNavigate={onNavigate}>
@@ -159,18 +192,37 @@ export function ProductPage({
 
           <div className="stage1-product-info">
             <h1 className="serif">{product.title}</h1>
+
             {product.priceText && (
               <div className="stage1-product-price">{product.priceText}</div>
             )}
-            {product.description && <p>{product.description}</p>}
+
+            {product.description && (
+              <p>{product.description}</p>
+            )}
 
             <div className="stage1-actions">
+              {/* Add to cart – navigates to cart in Stage 1 */}
               <a
-                href={`/${locale}/catalog`}
-                className="stage1-btn"
-                onClick={(e) => { e.preventDefault(); onNavigate(`/${locale}/catalog`) }}
+                href={`/${locale === 'uk' ? 'ua' : locale}/cart`}
+                className="stage1-btn-primary"
+                onClick={(e) => {
+                  e.preventDefault()
+                  onNavigate(`/${locale === 'uk' ? 'ua' : locale}/cart`)
+                }}
               >
-                {t(locale, 'Назад до каталогу', 'Back to catalog')}
+                {t(locale, 'Замовити', 'Order')}
+              </a>
+
+              <a
+                href={backHref}
+                className="stage1-btn"
+                onClick={(e) => {
+                  e.preventDefault()
+                  onNavigate(backHref)
+                }}
+              >
+                {t(locale, 'Назад', 'Back')}
               </a>
             </div>
           </div>
@@ -180,7 +232,17 @@ export function ProductPage({
   )
 }
 
-export function SearchPage({ locale = 'uk', query = '', products = [], categories = [], onNavigate }) {
+/* ======================================================================
+   Search page
+   ====================================================================== */
+
+export function SearchPage({
+  locale = 'uk',
+  query = '',
+  products = [],
+  categories = [],
+  onNavigate,
+}) {
   const q = String(query || '').trim().toLowerCase()
   const filtered = !q
     ? []
@@ -191,20 +253,148 @@ export function SearchPage({ locale = 'uk', query = '', products = [], categorie
   return (
     <PageShell locale={locale} categories={categories} onNavigate={onNavigate}>
       <app-catalog>
+        {q && (
+          <div className="stage1-search-header">
+            <span className="stage1-search-query-display">
+              {t(locale, `Результати для: "${q}"`, `Results for: "${q}"`)}
+            </span>
+          </div>
+        )}
         <ProductGrid
           locale={locale}
           products={filtered}
-          emptyText={t(locale, 'Нічого не знайдено', 'Nothing found')}
+          emptyText={
+            q
+              ? t(locale, 'Нічого не знайдено', 'Nothing found')
+              : t(locale, 'Введіть запит для пошуку', 'Enter a search query')
+          }
+          onNavigate={onNavigate}
         />
       </app-catalog>
     </PageShell>
   )
 }
 
+/* ======================================================================
+   Cart page
+   ====================================================================== */
+
+export function CartPage({ locale = 'uk', categories = [], onNavigate }) {
+  const localePrefix = locale === 'uk' ? 'ua' : locale
+
+  return (
+    <PageShell locale={locale} categories={categories} onNavigate={onNavigate}>
+      <div className="stage1-cart-page">
+        {/* Header row */}
+        <div className="stage1-cart-header">
+          <h1 className="serif">
+            {t(locale, 'Кошик', 'Cart')}
+          </h1>
+        </div>
+
+        {/* Empty cart state */}
+        <div className="stage1-empty-cart">
+          <div className="stage1-empty-cart-icon">
+            <img
+              src="/original-assets/assets/icons/empty-cart-primary.svg"
+              alt="empty cart"
+              onError={(e) => { e.currentTarget.style.display = 'none' }}
+            />
+          </div>
+
+          <div className="stage1-empty-cart-text">
+            <h3 className="serif" style={{ marginBottom: 8 }}>
+              {t(locale, 'Кошик порожній', 'Your cart is empty')}
+            </h3>
+            <p className="text-body default" style={{ color: '#9b6a68' }}>
+              {t(
+                locale,
+                'Додайте товари, щоб продовжити оформлення замовлення',
+                'Add items to proceed with checkout'
+              )}
+            </p>
+          </div>
+
+          <div className="stage1-empty-cart-actions">
+            <a
+              href={`/${localePrefix}`}
+              className="stage1-btn-primary"
+              onClick={(e) => {
+                e.preventDefault()
+                onNavigate(`/${localePrefix}`)
+              }}
+            >
+              {t(locale, 'Перейти до каталогу', 'Go to catalogue')}
+            </a>
+          </div>
+        </div>
+      </div>
+    </PageShell>
+  )
+}
+
+/* ======================================================================
+   Checkout page
+   ====================================================================== */
+
+export function CheckoutPage({ locale = 'uk', categories = [], onNavigate }) {
+  const localePrefix = locale === 'uk' ? 'ua' : locale
+
+  return (
+    <PageShell locale={locale} categories={categories} onNavigate={onNavigate}>
+      <div className="stage1-checkout-page">
+        <div className="stage1-checkout-inner">
+          <h1 className="serif stage1-checkout-title">
+            {t(locale, 'Оформлення замовлення', 'Checkout')}
+          </h1>
+
+          <div className="stage1-checkout-section">
+            <h3>{t(locale, 'Контактні дані', 'Contact details')}</h3>
+            <p>
+              {t(
+                locale,
+                'Будь ласка, поверніться до кошика та додайте товари перед оформленням замовлення.',
+                'Please return to the cart and add items before proceeding to checkout.'
+              )}
+            </p>
+          </div>
+
+          <div className="stage1-checkout-actions">
+            <a
+              href={`/${localePrefix}/cart`}
+              className="stage1-btn-primary"
+              onClick={(e) => {
+                e.preventDefault()
+                onNavigate(`/${localePrefix}/cart`)
+              }}
+            >
+              {t(locale, 'Повернутись до кошика', 'Return to cart')}
+            </a>
+            <a
+              href={`/${localePrefix}`}
+              className="stage1-btn"
+              onClick={(e) => {
+                e.preventDefault()
+                onNavigate(`/${localePrefix}`)
+              }}
+            >
+              {t(locale, 'Продовжити покупки', 'Continue shopping')}
+            </a>
+          </div>
+        </div>
+      </div>
+    </PageShell>
+  )
+}
+
+/* ======================================================================
+   404 page
+   ====================================================================== */
+
 export function NotFoundPage({ locale = 'uk', categories = [], onNavigate }) {
   return (
     <PageShell locale={locale} categories={categories} onNavigate={onNavigate}>
-      <div className="stage1-empty">
+      <div className="stage1-empty" style={{ textAlign: 'center', marginTop: 40 }}>
         <img
           src="/original-assets/assets/icons/errors/error-404.svg"
           alt="404"
@@ -223,5 +413,7 @@ export default {
   CategoryPage,
   ProductPage,
   SearchPage,
+  CartPage,
+  CheckoutPage,
   NotFoundPage,
 }
