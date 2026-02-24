@@ -10,7 +10,33 @@ html, body, #root {
 
 body {
   overflow: auto !important;
-  background: #ffebef;
+  background-color: #ffebef;
+}
+
+/* =====================================================================
+   CRITICAL HOVER FIX – root layer
+   The bare :hover { background-color: #ec7476 } in original-components.css
+   has specificity (0,1,0) which BEATS the non-hover body/html rule (0,0,1).
+   Since app-root, .main, app-catalog etc. are all transparent, the red
+   body colour bleeds through every page.
+
+   Fix: add explicit :hover declarations on html and body with higher
+   specificity (0,1,1) so they win in cascade order AND specificity.
+   ===================================================================== */
+html:hover,
+body:hover {
+  background-color: #ffebef;
+}
+
+/* =====================================================================
+   PATTERN BACKGROUND FIX
+   original-components.css line 87 (de-scoped cart-page component CSS)
+   injects: .pattern-background { display: none } globally.
+   Since it's not scoped to its Angular host element, it hides the
+   background pattern on ALL pages.  We restore it here.
+   ===================================================================== */
+.pattern-background {
+  display: block !important;
 }
 
 #root {
@@ -108,22 +134,37 @@ app-header .cart-container {
 }
 
 /* ── Header: cart button ──────────────────────────────────────────────── */
-/*   flex: none prevents .cart { flex:1 } from the cart-page CSS from     */
-/*   expanding this button to fill the full right column.                  */
+/*
+ * Three separate .cart rules in original-components.css (de-scoped) fight
+ * each other.  The critical conflicts we must override:
+ *
+ *   line 87:  .cart { flex:1; width:100%; flex-direction:column }
+ *             → would make the button stretch to fill the full column
+ *   line 89:  .cart { height:32px; aspect-ratio:1 }
+ *             → locks the button into a 32×32 square / circle
+ *
+ * All our rules have specificity (0,1,1) which beats plain .cart (0,1,0).
+ * We must explicitly declare every property that those rules would win on.
+ */
 app-header .cart {
   display: flex;
-  flex: none;
-  flex-direction: row;
+  flex: none;           /* override flex:1 from line 87 */
+  flex-direction: row;  /* override flex-direction:column from line 87 */
   align-items: center;
   justify-content: center;
   gap: 8px;
   position: relative;
-  padding: 8px 20px 8px 16px;
-  background-color: #e88a92;
-  border-radius: 28px;
+  /* Dimensions – override height:32px + aspect-ratio:1 from line 89 */
+  height: auto;
+  aspect-ratio: auto;
   width: fit-content;
+  /* Visual */
+  padding: 10px 20px 10px 16px;
+  background-color: #e88a92;
+  border-radius: 100px;     /* full-pill */
   cursor: pointer;
   overflow: visible;
+  text-decoration: none;
   transition: background-color 0.15s;
 }
 
