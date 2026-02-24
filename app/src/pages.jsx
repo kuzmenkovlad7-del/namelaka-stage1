@@ -1,6 +1,6 @@
 import React from 'react'
 import Header from './components/Header.jsx'
-import CategoryTabs from './components/CategoryTabs.jsx'
+import CategoryTabs, { UK_NAMES } from './components/CategoryTabs.jsx'
 import ProductGrid from './components/ProductGrid.jsx'
 
 function t(locale, uk, en) {
@@ -27,6 +27,114 @@ function BackArrow() {
 }
 
 /**
+ * MenuDrawer — slides in from the left, shows site navigation.
+ * Used by PageShell when burger is tapped.
+ */
+function MenuDrawer({ locale, categories, onNavigate, onClose }) {
+  const nav = (href) => (e) => {
+    e.preventDefault()
+    onClose()
+    onNavigate(href)
+  }
+
+  return (
+    <>
+      {/* Backdrop */}
+      <div
+        onClick={onClose}
+        style={{
+          position: 'fixed', inset: 0, zIndex: 100,
+          background: 'rgba(0,0,0,0.25)',
+        }}
+      />
+      {/* Drawer */}
+      <div style={{
+        position: 'fixed', top: 0, left: 0, bottom: 0,
+        width: 280, zIndex: 101,
+        background: '#ffebef',
+        display: 'flex', flexDirection: 'column',
+        padding: '24px 0 24px',
+        boxShadow: '2px 0 16px rgba(142,21,0,0.08)',
+        overflowY: 'auto',
+      }}>
+        {/* Close button */}
+        <button
+          onClick={onClose}
+          style={{
+            background: 'none', border: 'none', cursor: 'pointer',
+            alignSelf: 'flex-end', marginRight: 20, marginBottom: 16,
+            color: '#8e1500', padding: 4,
+          }}
+          aria-label="Закрити меню"
+        >
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+            <path d="M18 6L6 18" strokeWidth="1.5" strokeLinecap="round" stroke="currentColor"/>
+            <path d="M6 6L18 18" strokeWidth="1.5" strokeLinecap="round" stroke="currentColor"/>
+          </svg>
+        </button>
+
+        {/* Logo */}
+        <div style={{ padding: '0 20px 20px', borderBottom: '1px solid #f0c9ce' }}>
+          <a href={`/${locale}`} onClick={nav(`/${locale}`)} style={{ textDecoration: 'none' }}>
+            <img
+              src="/original-assets/assets/icons/logo-header-primary.svg"
+              alt="Namelaka"
+              style={{ height: 48, display: 'block' }}
+              onError={(e) => { e.currentTarget.style.display = 'none' }}
+            />
+          </a>
+        </div>
+
+        {/* Categories */}
+        <nav style={{ padding: '12px 0' }}>
+          {categories.map((cat) => {
+            const displayName = locale !== 'en' ? (UK_NAMES[cat.handle] || cat.name) : cat.name
+            return (
+              <a
+                key={cat.id}
+                href={`/${locale}/category/${encodeURIComponent(cat.handle)}`}
+                onClick={nav(`/${locale}/category/${encodeURIComponent(cat.handle)}`)}
+                style={{
+                  display: 'block',
+                  padding: '12px 20px',
+                  color: '#8e1500',
+                  textDecoration: 'none',
+                  fontSize: 16,
+                  fontWeight: 400,
+                  borderBottom: '1px solid #f8e8eb',
+                }}
+              >
+                {displayName}
+              </a>
+            )
+          })}
+        </nav>
+
+        {/* Bottom links */}
+        <div style={{ marginTop: 'auto', padding: '16px 20px 0', borderTop: '1px solid #f0c9ce' }}>
+          <a
+            href={`/${locale}/search`}
+            onClick={nav(`/${locale}/search`)}
+            style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#8e1500', textDecoration: 'none', padding: '10px 0' }}
+          >
+            <img src="/original-assets/assets/icons/search-primary.svg" alt="" style={{ width: 20, height: 20 }} onError={(e) => { e.currentTarget.style.display = 'none' }} />
+            <span style={{ fontSize: 15 }}>Пошук</span>
+          </a>
+          <a
+            href={`/${locale}/cart`}
+            onClick={nav(`/${locale}/cart`)}
+            style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#8e1500', textDecoration: 'none', padding: '10px 0' }}
+          >
+            <img src="/original-assets/assets/icons/cart-secondary.svg" alt="" style={{ width: 20, height: 20 }} onError={(e) => { e.currentTarget.style.display = 'none' }} />
+            <span style={{ fontSize: 15 }}>Кошик</span>
+          </a>
+        </div>
+      </div>
+    </>
+  )
+}
+
+/**
  * PageShell – wraps every page with the original site chrome:
  *   app-root
  *     app-header
@@ -44,6 +152,8 @@ export function PageShell({
   onNavigate,
   children,
 }) {
+  const [menuOpen, setMenuOpen] = React.useState(false)
+
   return (
     <app-root>
       {/* Fixed background pattern */}
@@ -62,7 +172,20 @@ export function PageShell({
         }}
       />
 
-      <Header locale={locale} onNavigate={onNavigate} />
+      {menuOpen && (
+        <MenuDrawer
+          locale={locale}
+          categories={categories}
+          onNavigate={onNavigate}
+          onClose={() => setMenuOpen(false)}
+        />
+      )}
+
+      <Header
+        locale={locale}
+        onNavigate={onNavigate}
+        onMenuToggle={() => setMenuOpen((o) => !o)}
+      />
 
       <CategoryTabs
         locale={locale}
@@ -244,16 +367,56 @@ export function SearchPage({
   categories = [],
   onNavigate,
 }) {
-  const q = String(query || '').trim().toLowerCase()
+  const [inputValue, setInputValue] = React.useState(query || '')
+  const inputRef = React.useRef(null)
+
+  // Sync if query changes via URL navigation
+  React.useEffect(() => {
+    setInputValue(query || '')
+  }, [query])
+
+  // Auto-focus the input when the search page mounts
+  React.useEffect(() => {
+    if (inputRef.current) inputRef.current.focus()
+  }, [])
+
+  const q = String(inputValue || '').trim().toLowerCase()
   const filtered = !q
     ? []
     : products.filter((p) =>
         `${p.title} ${p.description}`.toLowerCase().includes(q)
       )
 
+  const handleChange = (e) => {
+    const val = e.target.value
+    setInputValue(val)
+    // Update URL without navigation flash (replaceState keeps history clean)
+    const newUrl = `/${locale}/search` + (val.trim() ? `?q=${encodeURIComponent(val.trim())}` : '')
+    window.history.replaceState({}, '', newUrl)
+  }
+
   return (
     <PageShell locale={locale} categories={categories} onNavigate={onNavigate}>
       <app-catalog>
+        {/* Search input */}
+        <div className="stage1-search-input-wrap">
+          <img
+            src="/original-assets/assets/icons/search-primary.svg"
+            alt=""
+            className="stage1-search-icon"
+            onError={(e) => { e.currentTarget.style.display = 'none' }}
+          />
+          <input
+            ref={inputRef}
+            type="search"
+            className="stage1-search-input"
+            value={inputValue}
+            onChange={handleChange}
+            placeholder={t(locale, 'Введіть запит для пошуку', 'Search...')}
+            autoComplete="off"
+          />
+        </div>
+
         {q && (
           <div className="stage1-search-header">
             <span className="stage1-search-query-display">
@@ -261,16 +424,15 @@ export function SearchPage({
             </span>
           </div>
         )}
-        <ProductGrid
-          locale={locale}
-          products={filtered}
-          emptyText={
-            q
-              ? t(locale, 'Нічого не знайдено', 'Nothing found')
-              : t(locale, 'Введіть запит для пошуку', 'Enter a search query')
-          }
-          onNavigate={onNavigate}
-        />
+        {/* Only render ProductGrid when there's a query — avoids duplicate hint */}
+        {q ? (
+          <ProductGrid
+            locale={locale}
+            products={filtered}
+            emptyText={t(locale, 'Нічого не знайдено', 'Nothing found')}
+            onNavigate={onNavigate}
+          />
+        ) : null}
       </app-catalog>
     </PageShell>
   )

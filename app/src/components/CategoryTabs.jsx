@@ -19,7 +19,7 @@ const CATEGORY_ICONS = {
  * Ukrainian display names for categories (API returns English from Medusa).
  * Falls back to the API name when a handle is not listed here.
  */
-const UK_NAMES = {
+export const UK_NAMES = {
   'love-is':           'Love is',
   'sweets':            'Солодощі',
   'mini-cakes':        'Міні-торти',
@@ -31,7 +31,7 @@ const UK_NAMES = {
 }
 
 export default function CategoryTabs({
-  locale = 'uk',
+  locale = 'ua',
   categories = [],
   activeCategoryHandle = null,
   onNavigate,
@@ -46,7 +46,9 @@ export default function CategoryTabs({
       <div className="categories hide-scroll-bar">
         {categories.map((cat) => {
           const iconUrl = CATEGORY_ICONS[cat.handle] || null
-          const displayName = locale === 'uk' ? (UK_NAMES[cat.handle] || cat.name) : cat.name
+          // locale is 'ua' for Ukrainian, 'en' for English.
+          // UK_NAMES maps handles → Ukrainian display names.
+          const displayName = locale !== 'en' ? (UK_NAMES[cat.handle] || cat.name) : cat.name
           const isSelected = activeCategoryHandle === cat.handle
           const href = `/${locale}/category/${encodeURIComponent(cat.handle)}`
 

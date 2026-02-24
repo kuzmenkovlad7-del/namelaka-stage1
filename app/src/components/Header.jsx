@@ -5,7 +5,7 @@ import React from 'react'
  * Layout: 3-column grid  (icons | logo | cart)
  * Class names match the original exactly so original-components.css applies.
  */
-export default function Header({ locale = 'ua', onNavigate, cartCount = 0 }) {
+export default function Header({ locale = 'ua', onNavigate, onMenuToggle, cartCount = 0 }) {
   const nav = (href) => (e) => {
     e.preventDefault()
     if (onNavigate) onNavigate(href)
@@ -23,7 +23,7 @@ export default function Header({ locale = 'ua', onNavigate, cartCount = 0 }) {
           fill="none"
           xmlns="http://www.w3.org/2000/svg"
           aria-label="Меню"
-          onClick={nav(`/${locale}`)}
+          onClick={(e) => { e.preventDefault(); onMenuToggle && onMenuToggle() }}
         >
           <path d="M4 6H20" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" stroke="currentColor" />
           <path d="M4 12H20" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" stroke="currentColor" />

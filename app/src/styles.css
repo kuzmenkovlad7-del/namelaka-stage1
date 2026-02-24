@@ -14,27 +14,24 @@ body {
 }
 
 /* =====================================================================
-   CRITICAL HOVER FIX – root layer
-   The bare :hover { background-color: #ec7476 } in original-components.css
-   has specificity (0,1,0) which BEATS the non-hover body/html rule (0,0,1).
-   Since app-root, .main, app-catalog etc. are all transparent, the red
-   body colour bleeds through every page.
+   HOVER LEAKAGE: ROOT CAUSE FIXED
+   The two bare global `:hover { background-color: #ec7476 }` and
+   `:active { background-color: #ec7476 }` rules were removed directly
+   from original-components.css. Those were de-scoped Angular
+   :host:hover / :host:active rules that applied globally.
 
-   Fix: add explicit :hover declarations on html and body with higher
-   specificity (0,1,1) so they win in cascade order AND specificity.
+   The rules below are intentional hover/active states ONLY.
    ===================================================================== */
+
+/* Keep body background on hover (safety guard for any future regression) */
 html:hover,
 body:hover {
   background-color: #ffebef;
 }
 
-/* =====================================================================
-   PATTERN BACKGROUND FIX
-   original-components.css line 87 (de-scoped cart-page component CSS)
-   injects: .pattern-background { display: none } globally.
-   Since it's not scoped to its Angular host element, it hides the
-   background pattern on ALL pages.  We restore it here.
-   ===================================================================== */
+/* .pattern-background: original-components.css has a de-scoped
+   cart-page rule that injects display:none globally.
+   Force display:block here so it always shows. */
 .pattern-background {
   display: block !important;
 }
@@ -261,92 +258,6 @@ app-product-like {
 }
 
 /* =====================================================================
-   HOVER LEAKAGE FIX
-   Root cause: original-components.css contains de-scoped Angular
-   component styles. Angular compiles :host:hover → [_nghost-xxx]:hover,
-   but after stripping the [_nghost] attribute the rule becomes the
-   bare global selector :hover { background-color: #ec7476 }.
-   This makes every element on the page flash red on mouse-over.
-
-   Fix: explicitly declare the intended background-color on :hover
-   for all structural/layout elements, using selectors with higher
-   specificity than the bare :hover (0,1,0).
-   ===================================================================== */
-
-/* App chrome */
-app-root:hover   { background-color: transparent; }
-.main:hover      { background-color: transparent; }
-app-catalog:hover { background-color: transparent; }
-
-/* Header stays #ffebef when hovered */
-app-header:hover { background-color: #ffebef; }
-
-/* Header children – never fill with unexpected colour */
-app-header .icons-container:hover,
-app-header .logo-container:hover,
-app-header .cart-container:hover,
-app-header svg:hover,
-app-header img:not(.cart img):hover {
-  background-color: transparent;
-}
-
-/* Category strip – keep its own background, not the leaked red */
-app-categories:hover         { background-color: transparent; }
-app-categories .categories:hover  { background-color: #ffebef; }
-app-categories .category:hover    { background-color: transparent; }
-app-categories .category span:hover { background-color: transparent; }
-app-categories .category .icon:hover { background-color: transparent; }
-app-categories .category a:hover { background-color: transparent; }
-
-/* Product grid area */
-.products-grid-container:hover { background-color: transparent; }
-.products-grid:hover           { background-color: transparent; }
-
-/* Product card elements */
-app-product-card:hover         { background-color: transparent; }
-app-product-card .image:hover  { background-color: transparent; }
-app-product-card .info:hover   { background-color: transparent; }
-app-product-like:hover         { background-color: transparent; }
-
-/* Generic anchor/link elements */
-a:hover { background-color: transparent; }
-
-/* ─── Broad sweep: all descendants of catalog & header ───────────────── */
-/*
- * app-catalog *:hover covers every text/media/layout element in the
- * product grid (h1, h3, span, img, div, etc.) with specificity (0,1,1).
- * This beats the bare :hover (0,1,0) but loses to intentional higher-
- * specificity rules like :hover .heart { } (0,2,0) from original CSS.
- * The result: no red flash on ANY element inside app-catalog, while
- * preserving the product-like heart/counter hover fill effects.
- */
-app-catalog *:hover {
-  background-color: transparent;
-}
-
-/*
- * Same idea for app-header children. Excludes .cart so that the
- * pink cart-button hover stays intact (.cart:hover specificity 0,2,0
- * is already higher and would win, but being explicit is cleaner).
- */
-app-header *:hover:not(.cart) {
-  background-color: transparent;
-}
-
-/* Stage-1 custom elements */
-.stage1-page-content:hover,
-.stage1-product-page:hover,
-.stage1-product-media:hover,
-.stage1-product-info:hover,
-.stage1-actions:hover,
-.stage1-cart-page:hover,
-.stage1-empty-cart:hover,
-.stage1-checkout-page:hover,
-.stage1-checkout-inner:hover {
-  background-color: transparent;
-}
-
-/* =====================================================================
    Stage-1 utility classes (page chrome, loading, etc.)
    ===================================================================== */
 
@@ -403,6 +314,74 @@ app-header *:hover:not(.cart) {
 
 .stage1-image-fallback-large {
   min-height: 420px;
+}
+
+/* =====================================================================
+   Search page
+   ===================================================================== */
+
+.stage1-search-input-wrap {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 16px 40px 8px;
+  padding: 12px 16px;
+  background: rgba(255, 255, 255, 0.55);
+  border: 1px solid #efc9cf;
+  border-radius: 14px;
+}
+
+.stage1-search-icon {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  opacity: 0.7;
+}
+
+.stage1-search-input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  outline: none;
+  font-size: 16px;
+  color: #8e1500;
+  font-family: inherit;
+  min-width: 0;
+}
+
+.stage1-search-input::placeholder {
+  color: #b57b82;
+}
+
+/* Remove default search input X button in WebKit */
+.stage1-search-input::-webkit-search-cancel-button {
+  -webkit-appearance: none;
+  width: 16px;
+  height: 16px;
+  background: url('/original-assets/assets/icons/search-primary.svg') no-repeat center;
+  cursor: pointer;
+  opacity: 0.5;
+}
+
+.stage1-search-header {
+  padding: 4px 40px 12px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.stage1-search-query-display {
+  color: #9b6a68;
+  font-size: 14px;
+}
+
+@media (max-width: 750px) {
+  .stage1-search-input-wrap {
+    margin: 12px 16px 8px;
+  }
+  .stage1-search-header {
+    padding: 4px 16px 8px;
+  }
 }
 
 /* =====================================================================
@@ -474,8 +453,10 @@ app-header *:hover:not(.cart) {
   transition: background-color 0.15s;
 }
 
-.stage1-btn:hover {
-  background: #edaab4;
+@media (hover: hover) and (pointer: fine) {
+  .stage1-btn:hover {
+    background: #edaab4;
+  }
 }
 
 /* "Add to cart" style button */
@@ -494,8 +475,10 @@ app-header *:hover:not(.cart) {
   transition: background-color 0.15s;
 }
 
-.stage1-btn-primary:hover {
-  background: #ec7476;
+@media (hover: hover) and (pointer: fine) {
+  .stage1-btn-primary:hover {
+    background: #ec7476;
+  }
 }
 
 @media (max-width: 900px) {
@@ -647,26 +630,4 @@ app-header *:hover:not(.cart) {
 .stage1-checkout-actions .stage1-btn {
   width: 100%;
   justify-content: center;
-}
-
-/* =====================================================================
-   Search page — empty + results
-   ===================================================================== */
-
-.stage1-search-header {
-  padding: 16px 40px 12px;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.stage1-search-query-display {
-  color: #9b6a68;
-  font-size: 14px;
-}
-
-@media (max-width: 750px) {
-  .stage1-search-header {
-    padding: 12px 16px;
-  }
 }
