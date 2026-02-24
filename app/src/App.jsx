@@ -7,11 +7,18 @@ function parseRoute() {
   const url = new URL(window.location.href)
   const parts = url.pathname.replace(/\/+$/, '').split('/').filter(Boolean)
 
-  let locale = 'uk'
+  // Redirect /uk/* → /ua/* (single Ukrainian namespace)
+  if (parts[0] === 'uk') {
+    const newPath = '/ua' + (parts.length > 1 ? '/' + parts.slice(1).join('/') : '') + url.search
+    window.history.replaceState({}, '', newPath)
+    parts[0] = 'ua'
+  }
+
+  let locale = 'ua'   // URL prefix used for all Ukrainian links
   let rest = parts
 
   if (parts[0] === 'ua') {
-    locale = 'uk'
+    locale = 'ua'
     rest = parts.slice(1)
   } else if (parts[0] === 'en') {
     locale = 'en'

@@ -7,6 +7,7 @@ function t(locale, uk, en) {
   return locale === 'en' ? en : uk
 }
 
+
 function slugOrIdMatch(routeValue, category) {
   if (!routeValue || !category) return false
   return routeValue === category.id || routeValue === category.handle
@@ -37,7 +38,7 @@ function BackArrow() {
  * styles-ZBSN6PDF.css and original-components.css apply correctly.
  */
 export function PageShell({
-  locale = 'uk',
+  locale = 'ua',
   categories = [],
   activeCategoryHandle = null,
   onNavigate,
@@ -81,7 +82,7 @@ export function PageShell({
    Home / Catalog pages
    ====================================================================== */
 
-export function HomePage({ locale = 'uk', products = [], categories = [], onNavigate }) {
+export function HomePage({ locale = 'ua', products = [], categories = [], onNavigate }) {
   return (
     <PageShell locale={locale} categories={categories} onNavigate={onNavigate}>
       <app-catalog>
@@ -96,7 +97,7 @@ export function HomePage({ locale = 'uk', products = [], categories = [], onNavi
   )
 }
 
-export function CatalogPage({ locale = 'uk', products = [], categories = [], onNavigate }) {
+export function CatalogPage({ locale = 'ua', products = [], categories = [], onNavigate }) {
   return (
     <PageShell locale={locale} categories={categories} onNavigate={onNavigate}>
       <app-catalog>
@@ -116,7 +117,7 @@ export function CatalogPage({ locale = 'uk', products = [], categories = [], onN
    ====================================================================== */
 
 export function CategoryPage({
-  locale = 'uk',
+  locale = 'ua',
   categoryId,
   categories = [],
   products = [],
@@ -164,7 +165,7 @@ export function CategoryPage({
    ====================================================================== */
 
 export function ProductPage({
-  locale = 'uk',
+  locale = 'ua',
   productId,
   products = [],
   categories = [],
@@ -172,7 +173,7 @@ export function ProductPage({
 }) {
   const product = products.find((p) => p.id === productId || p.handle === productId)
 
-  const backHref = `/${locale === 'uk' ? 'ua' : locale}`
+  const backHref = `/${locale}`
 
   return (
     <PageShell locale={locale} categories={categories} onNavigate={onNavigate}>
@@ -204,11 +205,11 @@ export function ProductPage({
             <div className="stage1-actions">
               {/* Add to cart – navigates to cart in Stage 1 */}
               <a
-                href={`/${locale === 'uk' ? 'ua' : locale}/cart`}
+                href={`/${locale}/cart`}
                 className="stage1-btn-primary"
                 onClick={(e) => {
                   e.preventDefault()
-                  onNavigate(`/${locale === 'uk' ? 'ua' : locale}/cart`)
+                  onNavigate(`/${locale}/cart`)
                 }}
               >
                 {t(locale, 'Замовити', 'Order')}
@@ -237,7 +238,7 @@ export function ProductPage({
    ====================================================================== */
 
 export function SearchPage({
-  locale = 'uk',
+  locale = 'ua',
   query = '',
   products = [],
   categories = [],
@@ -279,9 +280,7 @@ export function SearchPage({
    Cart page
    ====================================================================== */
 
-export function CartPage({ locale = 'uk', categories = [], onNavigate }) {
-  const localePrefix = locale === 'uk' ? 'ua' : locale
-
+export function CartPage({ locale = 'ua', categories = [], onNavigate }) {
   return (
     <PageShell locale={locale} categories={categories} onNavigate={onNavigate}>
       <div className="stage1-cart-page">
@@ -317,11 +316,11 @@ export function CartPage({ locale = 'uk', categories = [], onNavigate }) {
 
           <div className="stage1-empty-cart-actions">
             <a
-              href={`/${localePrefix}`}
+              href={`/${locale}`}
               className="stage1-btn-primary"
               onClick={(e) => {
                 e.preventDefault()
-                onNavigate(`/${localePrefix}`)
+                onNavigate(`/${locale}`)
               }}
             >
               {t(locale, 'Перейти до каталогу', 'Go to catalogue')}
@@ -337,9 +336,7 @@ export function CartPage({ locale = 'uk', categories = [], onNavigate }) {
    Checkout page
    ====================================================================== */
 
-export function CheckoutPage({ locale = 'uk', categories = [], onNavigate }) {
-  const localePrefix = locale === 'uk' ? 'ua' : locale
-
+export function CheckoutPage({ locale = 'ua', categories = [], onNavigate }) {
   return (
     <PageShell locale={locale} categories={categories} onNavigate={onNavigate}>
       <div className="stage1-checkout-page">
@@ -361,21 +358,21 @@ export function CheckoutPage({ locale = 'uk', categories = [], onNavigate }) {
 
           <div className="stage1-checkout-actions">
             <a
-              href={`/${localePrefix}/cart`}
+              href={`/${locale}/cart`}
               className="stage1-btn-primary"
               onClick={(e) => {
                 e.preventDefault()
-                onNavigate(`/${localePrefix}/cart`)
+                onNavigate(`/${locale}/cart`)
               }}
             >
               {t(locale, 'Повернутись до кошика', 'Return to cart')}
             </a>
             <a
-              href={`/${localePrefix}`}
+              href={`/${locale}`}
               className="stage1-btn"
               onClick={(e) => {
                 e.preventDefault()
-                onNavigate(`/${localePrefix}`)
+                onNavigate(`/${locale}`)
               }}
             >
               {t(locale, 'Продовжити покупки', 'Continue shopping')}
@@ -391,7 +388,7 @@ export function CheckoutPage({ locale = 'uk', categories = [], onNavigate }) {
    404 page
    ====================================================================== */
 
-export function NotFoundPage({ locale = 'uk', categories = [], onNavigate }) {
+export function NotFoundPage({ locale = 'ua', categories = [], onNavigate }) {
   return (
     <PageShell locale={locale} categories={categories} onNavigate={onNavigate}>
       <div className="stage1-empty" style={{ textAlign: 'center', marginTop: 40 }}>

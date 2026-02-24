@@ -5,7 +5,7 @@ import React from 'react'
  * Layout: 3-column grid  (icons | logo | cart)
  * Class names match the original exactly so original-components.css applies.
  */
-export default function Header({ locale = 'uk', onNavigate, cartCount = 0 }) {
+export default function Header({ locale = 'ua', onNavigate, cartCount = 0 }) {
   const nav = (href) => (e) => {
     e.preventDefault()
     if (onNavigate) onNavigate(href)
