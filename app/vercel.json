@@ -1,0 +1,14 @@
+{
+  "redirects": [
+    { "source": "/uk", "destination": "/ua", "permanent": false },
+    { "source": "/uk/(.*)", "destination": "/ua/$1", "permanent": false }
+  ],
+  "rewrites": [
+    { "source": "/api/(.*)", "destination": "https://xhbfv-176-105-197-226.a.free.pinggy.link/api/$1" },
+    { "source": "/store/(.*)", "destination": "https://xhbfv-176-105-197-226.a.free.pinggy.link/store/$1" },
+    { "source": "/uploads/(.*)", "destination": "https://xhbfv-176-105-197-226.a.free.pinggy.link/uploads/$1" },
+    { "source": "/app/(.*)", "destination": "https://xhbfv-176-105-197-226.a.free.pinggy.link/app/$1" },
+    { "source": "/admin/(.*)", "destination": "https://xhbfv-176-105-197-226.a.free.pinggy.link/admin/$1" },
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
+}
