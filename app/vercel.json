@@ -1,14 +1,14 @@
 {
   "redirects": [
     { "source": "/uk", "destination": "/ua", "permanent": false },
-    { "source": "/uk/(.*)", "destination": "/ua/$1", "permanent": false }
+    { "source": "/uk/:path*", "destination": "/ua/:path*", "permanent": false }
   ],
   "rewrites": [
-    { "source": "/api/(.*)", "destination": "https://vlpcs-176-105-197-226.a.free.pinggy.link/api/$1" },
-    { "source": "/store/(.*)", "destination": "https://vlpcs-176-105-197-226.a.free.pinggy.link/store/$1" },
-    { "source": "/uploads/(.*)", "destination": "https://vlpcs-176-105-197-226.a.free.pinggy.link/uploads/$1" },
-    { "source": "/app/(.*)", "destination": "https://vlpcs-176-105-197-226.a.free.pinggy.link/app/$1" },
-    { "source": "/admin/(.*)", "destination": "https://vlpcs-176-105-197-226.a.free.pinggy.link/admin/$1" },
-    { "source": "/(.*)", "destination": "/index.html" }
+    { "source": "/api/:path*", "destination": "https://ingbi-176-105-197-226.a.free.pinggy.link/api/:path*" },
+    { "source": "/store/:path*", "destination": "https://ingbi-176-105-197-226.a.free.pinggy.link/store/:path*" },
+    { "source": "/uploads/:path*", "destination": "https://ingbi-176-105-197-226.a.free.pinggy.link/uploads/:path*" },
+    { "source": "/app/:path*", "destination": "https://ingbi-176-105-197-226.a.free.pinggy.link/app/:path*" },
+    { "source": "/admin/:path*", "destination": "https://ingbi-176-105-197-226.a.free.pinggy.link/admin/:path*" },
+    { "source": "/:path*", "destination": "/index.html" }
   ]
 }
