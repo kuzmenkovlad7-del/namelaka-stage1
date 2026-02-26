@@ -1,194 +1,243 @@
-import http from 'node:http'
-import fs from 'node:fs'
-import path from 'node:path'
-import { fileURLToPath } from 'node:url'
+#!/usr/bin/env node
+import http from "http";
+import fs from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
 
-const __dir = path.dirname(fileURLToPath(import.meta.url))
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
-const PORT = Number(process.env.PORT || 3010)
-const MEDUSA_URL = process.env.MEDUSA_URL || 'http://127.0.0.1:9000'
-const MEDUSA_KEY = process.env.MEDUSA_PUBLISHABLE_KEY || ''
+const PORT = Number(process.env.PORT || 3010);
 
-// DATA_DIR resolution: check multiple locations in priority order.
-// 1. Explicit DATA_DIR env var
-// 2. app/.local-data/ (gitignored dev dir — extract fallback zip here)
-// 3. repo data/fallback/ directory
-// 4. /var/www/namelaka-stage1 (production default)
+function exists(p) {
+  try { return fs.existsSync(p); } catch { return false; }
+}
+
 function resolveDataDir() {
-  if (process.env.DATA_DIR) return process.env.DATA_DIR
-  const candidates = [
-    path.resolve(__dir, '../.local-data'),     // app/.local-data/
-    path.resolve(__dir, '../../.local-data'),  // repo-root/.local-data/
-    path.resolve(__dir, '../../data/fallback'),// repo data/fallback/
-    '/var/www/namelaka-stage1',
-  ]
-  for (const dir of candidates) {
-    if (fs.existsSync(path.join(dir, 'medusa_categories.json'))) {
-      return dir
-    }
-  }
-  return candidates[0]
-}
+  // 1) explicit
+  if (process.env.DATA_DIR && exists(process.env.DATA_DIR)) return process.env.DATA_DIR;
 
-const DATA_DIR = resolveDataDir()
-const CATS_FILE = path.join(DATA_DIR, 'medusa_categories.json')
-const PRODS_FILE = path.join(DATA_DIR, 'medusa_products.json')
-
-function send(res, code, data, type = 'application/json') {
-  res.writeHead(code, { 'Content-Type': type, 'Access-Control-Allow-Origin': '*', 'Cache-Control': 'no-store' })
-  res.end(type === 'application/json' ? JSON.stringify(data) : data)
-}
-function parseJSONFile(file, fallback) {
-  try { return JSON.parse(fs.readFileSync(file, 'utf8')) } catch { return fallback }
-}
-function pick(obj, ...keys) { for (const k of keys) if (obj && obj[k] != null) return obj[k]; return undefined }
-
-function normCats(raw) {
-  const arr = Array.isArray(raw) ? raw : raw?.product_categories || raw?.categories || []
-  return arr.map((c, i) => ({
-    id: c.id || String(i),
-    name: c.name || c.title || 'Category',
-    description: c.description || '',
-    handle: c.handle || '',
-    rank: Number.isFinite(c.rank) ? c.rank : i,
-    images: Array.isArray(c.images) ? c.images : [],
-  }))
-}
-
-/**
- * Guess which category a product belongs to when there is no explicit linkage.
- *
- * The fallback export has `categories: []` and `product_category_id: null` for
- * every product, so we fall back to title/handle keyword matching.
- *
- * Resolution order:
- *  1. product_category_id / categoryId / category.id (explicit Medusa field)
- *  2. product.categories[0].id (Medusa v2 relationship array)
- *  3. Keyword match against known category handles
- */
-function guessCategoryId(p, cats) {
-  const explicit = p.product_category_id || p.categoryId || p.category?.id || null
-  if (explicit) return explicit
-
-  if (Array.isArray(p.categories) && p.categories.length > 0) {
-    const id = p.categories[0]?.id
-    if (id) return id
+  // 2) app/.local-data
+  const appRoot = path.resolve(__dirname, "..");
+  const localData = path.join(appRoot, ".local-data");
+  if (exists(path.join(localData, "medusa_categories.json")) && exists(path.join(localData, "medusa_products.json"))) {
+    return localData;
   }
 
-  const title = (pick(p, 'title', 'name') || '').toLowerCase()
-  const handle = (p.handle || '').toLowerCase()
-  const text = `${title} ${handle}`
-  const catId = (h) => cats.find((c) => c.handle === h)?.id || null
+  // 3) repo data/fallback (relative to app/)
+  const repoRoot = path.resolve(appRoot, "..");
+  const fallback = path.join(repoRoot, "data", "fallback");
+  if (exists(path.join(fallback, "medusa_categories.json")) && exists(path.join(fallback, "medusa_products.json"))) {
+    return fallback;
+  }
 
-  if (text.includes('puff')) return catId('puffs')
-  if (text.includes('mini') && text.includes('cake')) return catId('mini-cakes')
-  if (text.includes('cake')) return catId('cakes')
-  if (text.includes('love') || text.includes('cloud in love') || text.includes('cloud-in-love')) return catId('love-is')
-  if (text.includes('chocolate')) return catId('chocolate')
-  if (text.includes('sweet') || text.includes('candy') || text.includes('bonbon')) return catId('sweets')
-  if (text.includes('gift') || text.includes('certificate')) return catId('gift-certificates')
-  return null
+  // 4) app/data/fallback (just in case)
+  const fallback2 = path.join(appRoot, "data", "fallback");
+  if (exists(path.join(fallback2, "medusa_categories.json")) && exists(path.join(fallback2, "medusa_products.json"))) {
+    return fallback2;
+  }
+
+  // last resort: app/.local-data even if empty
+  return localData;
 }
 
-function normProducts(raw, cats = []) {
-  const arr = Array.isArray(raw) ? raw : raw?.products || []
-  return arr.map((p) => {
-    const categoryId = guessCategoryId(p, cats)
-    return {
-      id: p.id,
-      name: pick(p, 'name', 'title') || 'Product',
-      title: pick(p, 'title', 'name') || 'Product',
-      description: p.description || '',
-      smallSizeDescription: p.smallSizeDescription || '',
-      bigSizeDescription: p.bigSizeDescription || '',
-      images: Array.isArray(p.images) ? p.images.map((x) => (typeof x === 'string' ? x : x?.url)).filter(Boolean) : [],
-      price: p.price ?? null,
-      oldPrice: p.oldPrice ?? null,
-      hearts: Number(p.hearts || 0),
-      handle: p.handle || '',
-      product_category_id: categoryId,
-      categoryId,
-      thumbnail: p.thumbnail || null,
-      variants: p.variants || [],
+const DATA_DIR = resolveDataDir();
+const CATS_FILE = path.join(DATA_DIR, "medusa_categories.json");
+const PRODS_FILE = path.join(DATA_DIR, "medusa_products.json");
+
+function readJson(file) {
+  const raw = fs.readFileSync(file, "utf8");
+  return JSON.parse(raw);
+}
+
+function pickArray(obj) {
+  if (Array.isArray(obj)) return obj;
+  if (!obj || typeof obj !== "object") return [];
+  const candidate =
+    obj.product_categories ??
+    obj.categories ??
+    obj.products ??
+    obj.items ??
+    obj.data ??
+    [];
+  return Array.isArray(candidate) ? candidate : [];
+}
+
+function normSlug(v) {
+  return String(v ?? "")
+    .trim()
+    .replace(/^\/+/, "")     // remove leading slashes
+    .replace(/\s+/g, "-");
+}
+
+function normUrl(u) {
+  if (!u) return null;
+  const s = String(u);
+  if (/^https?:\/\//i.test(s)) {
+    // Rewrite local Medusa image URLs (localhost / 127.0.0.1) to a relative
+    // path so they are served through the reverse proxy and the browser can
+    // actually load them.
+    try {
+      const parsed = new URL(s);
+      if (parsed.hostname === "localhost" || parsed.hostname === "127.0.0.1") {
+        return parsed.pathname + (parsed.search || "");
+      }
+    } catch (_) {
+      // not a valid URL – fall through
     }
-  })
+    return s;
+  }
+  if (s.startsWith("/")) return s;
+  return `/${s}`;
 }
 
-async function medusaFetch(url) {
-  const headers = { accept: 'application/json' }
-  if (MEDUSA_KEY) headers['x-publishable-api-key'] = MEDUSA_KEY
-  const r = await fetch(url, { headers })
-  if (!r.ok) throw new Error(`medusa ${r.status}`)
-  return r.json()
+function normalizeCategory(c) {
+  const out = { ...c };
+  out.handle = normSlug(out.handle || out.slug || out.name || "");
+  return out;
 }
 
-async function loadData() {
+function normalizeProduct(p) {
+  const out = { ...p };
+
+  // normalize handle (critical for routing)
+  out.handle = normSlug(out.handle || out.slug || "");
+
+  // normalize category id field used across your app
+  out.categoryId = out.categoryId || out.product_category_id || out.productCategoryId || out.product_category?.id || null;
+
+  // normalize images
+  // medusa may return images as [{url}], or strings, and thumbnail may be null
+  const imgs = Array.isArray(out.images) ? out.images : [];
+  const normImgs = imgs.map((img) => {
+    if (typeof img === "string") return { url: normUrl(img) };
+    if (img && typeof img === "object") return { ...img, url: normUrl(img.url) };
+    return null;
+  }).filter(Boolean);
+
+  out.images = normImgs;
+
+  // normalize thumbnail
+  if (out.thumbnail) out.thumbnail = normUrl(out.thumbnail);
+  if (!out.thumbnail && out.images?.[0]?.url) out.thumbnail = out.images[0].url;
+
+  return out;
+}
+
+function loadData() {
+  let categories = [];
+  let products = [];
+  const errors = [];
+
   try {
-    const [catsRaw, prodsRaw] = await Promise.all([
-      medusaFetch(`${MEDUSA_URL}/store/product-categories`),
-      medusaFetch(`${MEDUSA_URL}/store/products?limit=200`),
-    ])
-    const cats = normCats(catsRaw)
-    const prods = normProducts(prodsRaw, cats)
-    return { source: 'medusa', cats, prods, medusa: true }
-  } catch {
-    const cats = normCats(parseJSONFile(CATS_FILE, []))
-    const prods = normProducts(parseJSONFile(PRODS_FILE, []), cats)
-    return { source: 'fallback', cats, prods, medusa: false }
+    if (exists(CATS_FILE)) {
+      const catsRaw = readJson(CATS_FILE);
+      categories = pickArray(catsRaw).map((c, i) => {
+        try { return normalizeCategory(c); } catch (_) { return null; }
+      }).filter(Boolean);
+    }
+  } catch (e) {
+    errors.push(`categories: ${e.message}`);
   }
+
+  try {
+    if (exists(PRODS_FILE)) {
+      const prodsRaw = readJson(PRODS_FILE);
+      products = pickArray(prodsRaw).map((p, i) => {
+        try { return normalizeProduct(p); } catch (_) { return null; }
+      }).filter(Boolean);
+    }
+  } catch (e) {
+    errors.push(`products: ${e.message}`);
+  }
+
+  return { ok: errors.length === 0, errors, categories, products };
 }
 
-const server = http.createServer(async (req, res) => {
-  const url = new URL(req.url, `http://${req.headers.host || 'localhost'}`)
-  if (req.method === 'OPTIONS') return send(res, 204, {})
+function send(res, code, obj) {
+  const body = JSON.stringify(obj);
+  res.writeHead(code, {
+    "Content-Type": "application/json; charset=utf-8",
+    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Methods": "GET,OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type, x-publishable-api-key",
+    "Cache-Control": "no-store",
+  });
+  res.end(body);
+}
 
-  if (url.pathname === '/_health') {
-    const d = await loadData()
-    return send(res, 200, {
-      ok: true, port: PORT, medusa_url: MEDUSA_URL, medusa_key_set: Boolean(MEDUSA_KEY),
-      medusa: d.medusa, source: d.source,
-      counts: { categories: d.cats.length, products: d.prods.length },
-      data_dir: DATA_DIR,
-      fallback: { catsFile: CATS_FILE, prodsFile: PRODS_FILE },
-    })
-  }
+function sendText(res, code, text) {
+  res.writeHead(code, {
+    "Content-Type": "text/plain; charset=utf-8",
+    "Access-Control-Allow-Origin": "*",
+    "Cache-Control": "no-store",
+  });
+  res.end(text);
+}
 
-  const d = await loadData()
-  const p = url.pathname
+function notFound(res) {
+  sendText(res, 404, "Not Found\n");
+}
 
-  if (p === '/api/categories') return send(res, 200, d.cats)
-  if (p === '/api/products') return send(res, 200, d.prods)
-  if (p === '/api/test/products') return send(res, 200, d.prods.slice(0, 20))
+http
+  .createServer((req, res) => {
+    if (!req.url) return notFound(res);
+    if (req.method === "OPTIONS") return send(res, 204, { ok: true });
 
-  if (p.startsWith('/api/search')) {
-    const q = (url.searchParams.get('search') || '').toLowerCase().trim()
-    const list = !q ? d.prods : d.prods.filter((x) => `${x.name} ${x.title} ${x.description}`.toLowerCase().includes(q))
-    return send(res, 200, list)
-  }
+    const u = new URL(req.url, "http://127.0.0.1");
+    const pathname = u.pathname.replace(/\/+/g, "/"); // collapse // into /
+    const parts = pathname.split("/").filter(Boolean);
 
-  const mProd = p.match(/^\/api\/products\/([^/]+)$/)
-  if (mProd) {
-    const id = decodeURIComponent(mProd[1])
-    const item = d.prods.find((x) => x.id === id || x.handle === id)
-    return item ? send(res, 200, item) : send(res, 404, { error: 'Not found' })
-  }
+    const data = loadData();
+    const { categories, products } = data;
 
-  const mCatProducts = p.match(/^\/api\/([^/]+)\/products$/)
-  if (mCatProducts) {
-    const catId = decodeURIComponent(mCatProducts[1])
-    // Match by category id OR handle (so /api/cakes/products works too)
-    const cat = d.cats.find((c) => c.id === catId || c.handle === catId)
-    const resolvedId = cat?.id || catId
-    const list = d.prods.filter(
-      (x) => x.product_category_id === resolvedId || x.categoryId === resolvedId
-    )
-    return send(res, 200, list)
-  }
+    // health — always returns, shows real status
+    if (pathname === "/api/health") {
+      return send(res, 200, {
+        ok: data.ok,
+        errors: data.errors,
+        data_dir: DATA_DIR,
+        files: {
+          categories: CATS_FILE,
+          categories_exists: exists(CATS_FILE),
+          products: PRODS_FILE,
+          products_exists: exists(PRODS_FILE),
+        },
+        counts: { categories: categories.length, products: products.length },
+      });
+    }
 
-  if (/^\/api\/products\/hearts\//.test(p)) return send(res, 200, { ok: true })
-  return send(res, 404, { error: 'Not found', path: p })
-})
+    // categories list
+    if (pathname === "/api/categories") {
+      return send(res, 200, categories);
+    }
 
-server.listen(PORT, '0.0.0.0', () => {
-  console.log(`[adapter] Listening on :${PORT} | DATA_DIR: ${DATA_DIR}`)
-})
+    // products list
+    if (pathname === "/api/products") {
+      return send(res, 200, products);
+    }
+
+    // single product by id or handle (robust for product page)
+    if (parts[0] === "api" && parts[1] === "product" && parts[2]) {
+      const key = normSlug(parts.slice(2).join("/"));
+      const p = products.find((x) => x.id === key || normSlug(x.handle) === key);
+      if (!p) return send(res, 404, { ok: false, error: "Product not found" });
+      return send(res, 200, p);
+    }
+
+    // /api/:categoryHandle/products
+    if (parts[0] === "api" && parts[1] && parts[2] === "products") {
+      const catHandle = normSlug(parts[1]);
+      const cat = categories.find((c) => normSlug(c.handle) === catHandle);
+      if (!cat) return send(res, 200, []);
+      const out = products.filter((p) => (p.product_category_id || p.categoryId) === cat.id);
+      return send(res, 200, out);
+    }
+
+    return notFound(res);
+  })
+  .listen(PORT, "127.0.0.1", () => {
+    console.log(`[adapter] Listening on :${PORT} | DATA_DIR: ${DATA_DIR}`);
+    console.log(`[adapter] CATS: ${CATS_FILE}`);
+    console.log(`[adapter] PRODS: ${PRODS_FILE}`);
+  });

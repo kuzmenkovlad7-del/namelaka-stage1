@@ -7,11 +7,18 @@ function parseRoute() {
   const url = new URL(window.location.href)
   const parts = url.pathname.replace(/\/+$/, '').split('/').filter(Boolean)
 
-  let locale = 'uk'
+  // Redirect /uk/* → /ua/* (single Ukrainian namespace)
+  if (parts[0] === 'uk') {
+    const newPath = '/ua' + (parts.length > 1 ? '/' + parts.slice(1).join('/') : '') + url.search
+    window.history.replaceState({}, '', newPath)
+    parts[0] = 'ua'
+  }
+
+  let locale = 'ua'   // URL prefix used for all Ukrainian links
   let rest = parts
 
   if (parts[0] === 'ua') {
-    locale = 'uk'
+    locale = 'ua'
     rest = parts.slice(1)
   } else if (parts[0] === 'en') {
     locale = 'en'
@@ -24,6 +31,8 @@ function parseRoute() {
   if (rest[0] === 'category' && rest[1]) return { type: 'category', locale, categoryId: decodeURIComponent(rest[1]) }
   if (rest[0] === 'product' && rest[1]) return { type: 'product', locale, productId: decodeURIComponent(rest[1]) }
   if (rest[0] === 'search') return { type: 'search', locale, query: url.searchParams.get('q') || '' }
+  if (rest[0] === 'cart') return { type: 'cart', locale }
+  if (rest[0] === 'checkout') return { type: 'checkout', locale }
 
   return { type: 'notfound', locale }
 }
@@ -101,11 +110,13 @@ export default function App() {
     onNavigate: navigate,
   }
 
-  if (route.type === 'home') return <Pages.HomePage {...common} />
-  if (route.type === 'catalog') return <Pages.CatalogPage {...common} />
+  if (route.type === 'home')     return <Pages.HomePage {...common} />
+  if (route.type === 'catalog')  return <Pages.CatalogPage {...common} />
   if (route.type === 'category') return <Pages.CategoryPage {...common} categoryId={route.categoryId} />
-  if (route.type === 'product') return <Pages.ProductPage {...common} productId={route.productId} />
-  if (route.type === 'search') return <Pages.SearchPage {...common} query={route.query} />
+  if (route.type === 'product')  return <Pages.ProductPage {...common} productId={route.productId} />
+  if (route.type === 'search')   return <Pages.SearchPage {...common} query={route.query} />
+  if (route.type === 'cart')     return <Pages.CartPage {...common} />
+  if (route.type === 'checkout') return <Pages.CheckoutPage {...common} />
 
   return <Pages.NotFoundPage {...common} />
 }

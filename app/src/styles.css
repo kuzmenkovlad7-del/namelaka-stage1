@@ -10,7 +10,30 @@ html, body, #root {
 
 body {
   overflow: auto !important;
-  background: #ffebef;
+  background-color: #ffebef;
+}
+
+/* =====================================================================
+   HOVER LEAKAGE: ROOT CAUSE FIXED
+   The two bare global `:hover { background-color: #ec7476 }` and
+   `:active { background-color: #ec7476 }` rules were removed directly
+   from original-components.css. Those were de-scoped Angular
+   :host:hover / :host:active rules that applied globally.
+
+   The rules below are intentional hover/active states ONLY.
+   ===================================================================== */
+
+/* Keep body background on hover (safety guard for any future regression) */
+html:hover,
+body:hover {
+  background-color: #ffebef;
+}
+
+/* .pattern-background: original-components.css has a de-scoped
+   cart-page rule that injects display:none globally.
+   Force display:block here so it always shows. */
+.pattern-background {
+  display: block !important;
 }
 
 #root {
@@ -39,7 +62,7 @@ app-header {
   grid-template-columns: 1fr auto 1fr;
   align-items: center;
   padding: 0 40px;
-  height: 100px;
+  height: 88px;           /* match original: 88px desktop */
   background-color: #ffebef;
   position: sticky;
   top: 0;
@@ -54,36 +77,144 @@ app-header {
   }
 }
 
-/* Header cart button (not the cart page).
-   flex: none prevents the generic .cart{flex:1} from the cart-page component
-   CSS (original-components.css) from expanding this button to full column width. */
-app-header .cart {
+/* ── Header: icons-container (left column) ────────────────────────────── */
+app-header .icons-container {
   display: flex;
-  flex: none;
-  flex-direction: row;
+  justify-content: flex-start;
   align-items: center;
-  gap: 8px;
-  position: relative;
-  padding: 8px 16px;
-  background-color: #e88a92;
-  border-radius: 80px;
-  width: fit-content;
-  max-width: 160px;
-  margin-left: auto;
-  cursor: pointer;
-  overflow: visible;
+  gap: 20px;
 }
 
+/* Ensure SVG burger icon renders at correct size and colour */
+app-header .icons-container svg {
+  display: block;
+  color: #8e1500;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
+/* Search icon */
+app-header .icons-container img {
+  display: block;
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
+/* ── Header: logo-container (center column) ───────────────────────────── */
+app-header .logo-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+app-header .logo-container img {
+  height: 60px;
+  width: 120px;
+  display: block;
+  object-fit: contain;
+}
+
+@media screen and (max-width: 750px) {
+  app-header .logo-container img {
+    height: 50px;
+    width: 100px;
+  }
+}
+
+/* ── Header: cart-container (right column) ────────────────────────────── */
+app-header .cart-container {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+}
+
+/* ── Header: cart button ──────────────────────────────────────────────── */
+/*
+ * Three separate .cart rules in original-components.css (de-scoped) fight
+ * each other.  The critical conflicts we must override:
+ *
+ *   line 87:  .cart { flex:1; width:100%; flex-direction:column }
+ *             → would make the button stretch to fill the full column
+ *   line 89:  .cart { height:32px; aspect-ratio:1 }
+ *             → locks the button into a 32×32 square / circle
+ *
+ * All our rules have specificity (0,1,1) which beats plain .cart (0,1,0).
+ * We must explicitly declare every property that those rules would win on.
+ */
+app-header .cart {
+  display: flex;
+  flex: none;           /* override flex:1 from line 87 */
+  flex-direction: row;  /* override flex-direction:column from line 87 */
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  position: relative;
+  /* Dimensions – override height:32px + aspect-ratio:1 from line 89 */
+  height: auto;
+  aspect-ratio: auto;
+  width: fit-content;
+  /* Visual */
+  padding: 10px 20px 10px 16px;
+  background-color: #e88a92;
+  border-radius: 100px;     /* full-pill */
+  cursor: pointer;
+  overflow: visible;
+  text-decoration: none;
+  transition: background-color 0.15s;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  app-header .cart:hover {
+    background-color: #ec7476;
+  }
+}
+
+app-header .cart img {
+  display: block;
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+}
+
+app-header .cart .button-text.primary {
+  color: #fff;
+  white-space: nowrap;
+}
+
+app-header .cart .cart__badge {
+  position: absolute;
+  top: 26px;
+  right: 14px;
+  padding: 2px 2px 1px;
+  background-color: #ffebef;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 750;
+  font-size: 8px;
+  line-height: 8px;
+  color: #8e1500;
+  border-radius: 20px;
+  min-width: 14px;
+}
+
+/* Mobile cart button – icon-only pill */
 @media screen and (max-width: 750px) {
   app-header .cart {
     flex-direction: column;
     height: 56px;
-    aspect-ratio: 1;
+    width: 56px;
     padding: 0;
     gap: 2px;
     background: transparent;
     border-radius: 0;
-    margin-left: 0;
+  }
+  app-header .cart .cart__badge {
+    top: auto;
+    right: 3.5px;
+    bottom: 2px;
   }
 }
 
@@ -185,7 +316,78 @@ app-product-like {
   min-height: 420px;
 }
 
-/* Product detail page */
+/* =====================================================================
+   Search page
+   ===================================================================== */
+
+.stage1-search-input-wrap {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 16px 40px 8px;
+  padding: 12px 16px;
+  background: rgba(255, 255, 255, 0.55);
+  border: 1px solid #efc9cf;
+  border-radius: 14px;
+}
+
+.stage1-search-icon {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  opacity: 0.7;
+}
+
+.stage1-search-input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  outline: none;
+  font-size: 16px;
+  color: #8e1500;
+  font-family: inherit;
+  min-width: 0;
+}
+
+.stage1-search-input::placeholder {
+  color: #b57b82;
+}
+
+/* Remove default search input X button in WebKit */
+.stage1-search-input::-webkit-search-cancel-button {
+  -webkit-appearance: none;
+  width: 16px;
+  height: 16px;
+  background: url('/original-assets/assets/icons/search-primary.svg') no-repeat center;
+  cursor: pointer;
+  opacity: 0.5;
+}
+
+.stage1-search-header {
+  padding: 4px 40px 12px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.stage1-search-query-display {
+  color: #9b6a68;
+  font-size: 14px;
+}
+
+@media (max-width: 750px) {
+  .stage1-search-input-wrap {
+    margin: 12px 16px 8px;
+  }
+  .stage1-search-header {
+    padding: 4px 16px 8px;
+  }
+}
+
+/* =====================================================================
+   Product detail page
+   ===================================================================== */
+
 .stage1-product-page {
   display: grid;
   grid-template-columns: minmax(280px, 540px) minmax(260px, 1fr);
@@ -231,16 +433,52 @@ app-product-like {
 
 .stage1-actions {
   margin-top: 16px;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
 }
 
 .stage1-btn {
-  display: inline-block;
-  padding: 10px 14px;
+  display: inline-flex;
+  align-items: center;
+  padding: 10px 20px;
   border-radius: 999px;
   border: 1px solid #e59aa8;
   background: #f6c2cc;
   color: #8e1500;
   text-decoration: none;
+  font-size: 14px;
+  font-weight: 450;
+  cursor: pointer;
+  transition: background-color 0.15s;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .stage1-btn:hover {
+    background: #edaab4;
+  }
+}
+
+/* "Add to cart" style button */
+.stage1-btn-primary {
+  display: inline-flex;
+  align-items: center;
+  padding: 10px 20px;
+  border-radius: 999px;
+  border: none;
+  background: #e88a92;
+  color: #fff;
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 450;
+  cursor: pointer;
+  transition: background-color 0.15s;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .stage1-btn-primary:hover {
+    background: #ec7476;
+  }
 }
 
 @media (max-width: 900px) {
@@ -261,4 +499,135 @@ app-product-like {
   .stage1-empty {
     margin: 16px;
   }
+}
+
+/* =====================================================================
+   Cart page
+   ===================================================================== */
+
+.stage1-cart-page {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 24px 16px 120px;
+  min-height: calc(100vh - 88px - 60px);  /* viewport minus header+cats */
+}
+
+.stage1-cart-page .stage1-cart-header {
+  width: 100%;
+  max-width: 438px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 24px;
+}
+
+.stage1-cart-page .stage1-cart-header h1 {
+  text-align: center;
+  flex: 1;
+}
+
+.stage1-empty-cart {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 32px;
+  max-width: 438px;
+  width: 100%;
+  padding-top: 40px;
+}
+
+.stage1-empty-cart-icon {
+  width: 140px;
+  height: 140px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.stage1-empty-cart-icon img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.stage1-empty-cart-text {
+  text-align: center;
+  color: #9b6a68;
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+.stage1-empty-cart-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+  padding: 0 16px;
+}
+
+.stage1-empty-cart-actions .stage1-btn-primary,
+.stage1-empty-cart-actions .stage1-btn {
+  width: 100%;
+  justify-content: center;
+}
+
+/* =====================================================================
+   Checkout page
+   ===================================================================== */
+
+.stage1-checkout-page {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 24px 16px 120px;
+}
+
+.stage1-checkout-inner {
+  width: 100%;
+  max-width: 438px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.stage1-checkout-title {
+  text-align: center;
+  margin-top: 20px;
+}
+
+.stage1-checkout-section {
+  background: rgba(255, 255, 255, 0.35);
+  border: 1px solid #efc9cf;
+  border-radius: 20px;
+  padding: 20px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.stage1-checkout-section h3 {
+  color: #8e1500;
+  font-size: 16px;
+  font-weight: 450;
+}
+
+.stage1-checkout-section p {
+  color: #9b6a68;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.stage1-checkout-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 0 0 8px;
+}
+
+.stage1-checkout-actions .stage1-btn-primary,
+.stage1-checkout-actions .stage1-btn {
+  width: 100%;
+  justify-content: center;
 }
