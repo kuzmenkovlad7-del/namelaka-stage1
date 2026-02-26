@@ -230,8 +230,22 @@ http
       const catHandle = normSlug(parts[1]);
       const cat = categories.find((c) => normSlug(c.handle) === catHandle);
       if (!cat) return send(res, 200, []);
-      const out = products.filter((p) => (p.product_category_id || p.categoryId) === cat.id);
-      return send(res, 200, out);
+      const out = products.filter((p) => {
+      const id = p.product_category_id || p.categoryId || p.category_id;
+      if (id && id === cat.id) return true;
+
+      const cats = p.categories || p.product_categories || p.productCategories || [];
+      if (Array.isArray(cats) && cats.some((cc) => {
+        if (!cc) return false;
+        if (typeof cc === "string") return cc === cat.id || normSlug(cc) === catHandle;
+        return (cc.id && cc.id === cat.id) || (cc.handle && normSlug(cc.handle) === catHandle);
+      })) return true;
+
+      const catIds = p.category_ids || p.categoryIds;
+      if (Array.isArray(catIds) && catIds.includes(cat.id)) return true;
+      return false;
+    });
+    return send(res, 200, out);
     }
 
     return notFound(res);
