@@ -53,14 +53,14 @@ function readJson(file) {
 function pickArray(obj) {
   if (Array.isArray(obj)) return obj;
   if (!obj || typeof obj !== "object") return [];
-  return (
-    obj.product_categories ||
-    obj.categories ||
-    obj.products ||
-    obj.items ||
-    obj.data ||
-    []
-  );
+  const candidate =
+    obj.product_categories ??
+    obj.categories ??
+    obj.products ??
+    obj.items ??
+    obj.data ??
+    [];
+  return Array.isArray(candidate) ? candidate : [];
 }
 
 function normSlug(v) {
@@ -73,7 +73,20 @@ function normSlug(v) {
 function normUrl(u) {
   if (!u) return null;
   const s = String(u);
-  if (/^https?:\/\//i.test(s)) return s;
+  if (/^https?:\/\//i.test(s)) {
+    // Rewrite local Medusa image URLs (localhost / 127.0.0.1) to a relative
+    // path so they are served through the reverse proxy and the browser can
+    // actually load them.
+    try {
+      const parsed = new URL(s);
+      if (parsed.hostname === "localhost" || parsed.hostname === "127.0.0.1") {
+        return parsed.pathname + (parsed.search || "");
+      }
+    } catch (_) {
+      // not a valid URL – fall through
+    }
+    return s;
+  }
   if (s.startsWith("/")) return s;
   return `/${s}`;
 }
@@ -114,26 +127,31 @@ function normalizeProduct(p) {
 function loadData() {
   let categories = [];
   let products = [];
+  const errors = [];
 
   try {
     if (exists(CATS_FILE)) {
       const catsRaw = readJson(CATS_FILE);
-      categories = pickArray(catsRaw).map(normalizeCategory);
+      categories = pickArray(catsRaw).map((c, i) => {
+        try { return normalizeCategory(c); } catch (_) { return null; }
+      }).filter(Boolean);
     }
   } catch (e) {
-    return { ok: false, error: `Failed to read categories: ${e.message}`, categories: [], products: [] };
+    errors.push(`categories: ${e.message}`);
   }
 
   try {
     if (exists(PRODS_FILE)) {
       const prodsRaw = readJson(PRODS_FILE);
-      products = pickArray(prodsRaw).map(normalizeProduct);
+      products = pickArray(prodsRaw).map((p, i) => {
+        try { return normalizeProduct(p); } catch (_) { return null; }
+      }).filter(Boolean);
     }
   } catch (e) {
-    return { ok: false, error: `Failed to read products: ${e.message}`, categories: [], products: [] };
+    errors.push(`products: ${e.message}`);
   }
 
-  return { ok: true, categories, products };
+  return { ok: errors.length === 0, errors, categories, products };
 }
 
 function send(res, code, obj) {
@@ -171,16 +189,20 @@ http
     const parts = pathname.split("/").filter(Boolean);
 
     const data = loadData();
-    if (!data.ok) return send(res, 500, { ok: false, error: data.error, data_dir: DATA_DIR });
-
     const { categories, products } = data;
 
-    // health
+    // health — always returns, shows real status
     if (pathname === "/api/health") {
       return send(res, 200, {
-        ok: true,
+        ok: data.ok,
+        errors: data.errors,
         data_dir: DATA_DIR,
-        files: { categories: CATS_FILE, products: PRODS_FILE },
+        files: {
+          categories: CATS_FILE,
+          categories_exists: exists(CATS_FILE),
+          products: PRODS_FILE,
+          products_exists: exists(PRODS_FILE),
+        },
         counts: { categories: categories.length, products: products.length },
       });
     }

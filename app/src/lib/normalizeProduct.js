@@ -34,6 +34,9 @@ export function normalizeProduct(raw, index = 0, _demo = null) {
   const title = raw?.title || raw?.name || `Product ${index + 1}`
   const description = raw?.description || raw?.subtitle || raw?.short_description || ''
 
+  // Normalize image: prefer thumbnail, fall back to first image.
+  // If the URL is absolute pointing to localhost (already rewritten by adapter),
+  // use it as-is (relative path).
   const image =
     raw?.thumbnail ||
     firstImage(raw?.images) ||
@@ -60,7 +63,7 @@ export function normalizeProduct(raw, index = 0, _demo = null) {
 
   return {
     id: raw?.id || `demo-${index + 1}`,
-    handle: raw?.handle || `product-${index + 1}`,
+    handle: String(raw?.handle || `product-${index + 1}`).replace(/^\/+/, ''),
     title,
     description,
     image,

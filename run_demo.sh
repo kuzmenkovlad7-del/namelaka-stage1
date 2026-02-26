@@ -36,7 +36,7 @@ tmux send-keys -t "$SESSION:demo.2" "if [ -d '$ADMIN' ]; then cd '$ADMIN' && npm
 
 # pane 3: proxy (one domain for both)
 tmux split-window -v -t "$SESSION:demo.0"
-tmux send-keys -t "$SESSION:demo.3" "node -e \"const http=require('http');const {createProxyServer}=require('http-proxy');const proxy=createProxyServer({});const server=http.createServer((req,res)=>{const u=req.url||'/'; if(u.startsWith('/admin')||u.startsWith('/app')){ proxy.web(req,res,{target:'http://127.0.0.1:$ADMIN_PORT'}); } else { proxy.web(req,res,{target:'http://127.0.0.1:$VITE_PORT'}); } }); server.listen($PROXY_PORT,'0.0.0.0',()=>console.log('[proxy] http://localhost:$PROXY_PORT -> / -> :$VITE_PORT | /admin,/app -> :$ADMIN_PORT'));\" " C-m
+tmux send-keys -t "$SESSION:demo.3" "node -e \"const http=require('http');const {createProxyServer}=require('http-proxy');const proxy=createProxyServer({});const server=http.createServer((req,res)=>{const u=req.url||'/'; if(u.startsWith('/admin')||u.startsWith('/app')||u.startsWith('/uploads')){ proxy.web(req,res,{target:'http://127.0.0.1:$ADMIN_PORT'}); } else { proxy.web(req,res,{target:'http://127.0.0.1:$VITE_PORT'}); } }); server.listen($PROXY_PORT,'0.0.0.0',()=>console.log('[proxy] http://localhost:$PROXY_PORT -> / -> :$VITE_PORT | /admin,/app,/uploads -> :$ADMIN_PORT'));\" " C-m
 
 # pane 4: tunnel (public url)
 tmux split-window -h -t "$SESSION:demo.3"
