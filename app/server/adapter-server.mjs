@@ -44,6 +44,7 @@ function resolveDataDir() {
 const DATA_DIR = resolveDataDir();
 const CATS_FILE = path.join(DATA_DIR, "medusa_categories.json");
 const PRODS_FILE = path.join(DATA_DIR, "medusa_products.json");
+const BY_CAT_FILE = path.join(DATA_DIR, "products_by_category.json");
 
 function readJson(file) {
   const raw = fs.readFileSync(file, "utf8");
@@ -97,6 +98,23 @@ function normalizeCategory(c) {
   return out;
 }
 
+function extractPrice(p) {
+  // Try explicit price field first (set by sync script)
+  if (p.price != null) return p.price;
+  // Try variants
+  const variants = Array.isArray(p.variants) ? p.variants : [];
+  for (const v of variants) {
+    if (v.calculated_price?.calculated_amount != null) {
+      return v.calculated_price.calculated_amount;
+    }
+    const prices = Array.isArray(v.prices) ? v.prices : [];
+    for (const pr of prices) {
+      if (pr.amount != null) return pr.amount;
+    }
+  }
+  return null;
+}
+
 function normalizeProduct(p) {
   const out = { ...p };
 
@@ -104,7 +122,14 @@ function normalizeProduct(p) {
   out.handle = normSlug(out.handle || out.slug || "");
 
   // normalize category id field used across your app
-  out.categoryId = out.categoryId || out.product_category_id || out.productCategoryId || out.product_category?.id || null;
+  out.product_category_id =
+    out.product_category_id ||
+    out.categoryId ||
+    out.category_id ||
+    out.product_category?.id ||
+    (Array.isArray(out.categories) && out.categories.length > 0 ? out.categories[0].id : null) ||
+    null;
+  out.categoryId = out.product_category_id;
 
   // normalize images
   // medusa may return images as [{url}], or strings, and thumbnail may be null
@@ -121,7 +146,26 @@ function normalizeProduct(p) {
   if (out.thumbnail) out.thumbnail = normUrl(out.thumbnail);
   if (!out.thumbnail && out.images?.[0]?.url) out.thumbnail = out.images[0].url;
 
+  // normalize price
+  const priceAmount = extractPrice(p);
+  if (priceAmount != null && out.price == null) {
+    out.price = priceAmount;
+  }
+
   return out;
+}
+
+/**
+ * Load products_by_category.json if present.
+ * Returns { [categoryHandle]: [productId, ...] } or null.
+ */
+function loadCategoryMapping() {
+  if (!exists(BY_CAT_FILE)) return null;
+  try {
+    const raw = readJson(BY_CAT_FILE);
+    if (raw && typeof raw === "object" && !Array.isArray(raw)) return raw;
+  } catch (_) {}
+  return null;
 }
 
 function loadData() {
@@ -132,7 +176,7 @@ function loadData() {
   try {
     if (exists(CATS_FILE)) {
       const catsRaw = readJson(CATS_FILE);
-      categories = pickArray(catsRaw).map((c, i) => {
+      categories = pickArray(catsRaw).map((c) => {
         try { return normalizeCategory(c); } catch (_) { return null; }
       }).filter(Boolean);
     }
@@ -143,7 +187,7 @@ function loadData() {
   try {
     if (exists(PRODS_FILE)) {
       const prodsRaw = readJson(PRODS_FILE);
-      products = pickArray(prodsRaw).map((p, i) => {
+      products = pickArray(prodsRaw).map((p) => {
         try { return normalizeProduct(p); } catch (_) { return null; }
       }).filter(Boolean);
     }
@@ -151,7 +195,9 @@ function loadData() {
     errors.push(`products: ${e.message}`);
   }
 
-  return { ok: errors.length === 0, errors, categories, products };
+  const categoryMapping = loadCategoryMapping();
+
+  return { ok: errors.length === 0, errors, categories, products, categoryMapping };
 }
 
 function send(res, code, obj) {
@@ -179,6 +225,44 @@ function notFound(res) {
   sendText(res, 404, "Not Found\n");
 }
 
+/**
+ * Filter products for a given category handle.
+ * Priority:
+ *   1. products_by_category.json mapping (most reliable, from sync script)
+ *   2. product.categories[] array (enriched products)
+ *   3. product.product_category_id / categoryId match
+ */
+function filterProductsByCategory(products, cat, categoryMapping) {
+  const catHandle = normSlug(cat.handle);
+
+  // 1. use explicit mapping file if available
+  if (categoryMapping && Array.isArray(categoryMapping[catHandle])) {
+    const ids = new Set(categoryMapping[catHandle]);
+    return products.filter((p) => ids.has(p.id));
+  }
+
+  // 2. fallback: filter by product fields
+  return products.filter((p) => {
+    // Check single-category id fields
+    const id = p.product_category_id || p.categoryId || p.category_id;
+    if (id && id === cat.id) return true;
+
+    // Check categories array
+    const cats = p.categories || p.product_categories || p.productCategories || [];
+    if (Array.isArray(cats) && cats.some((cc) => {
+      if (!cc) return false;
+      if (typeof cc === "string") return cc === cat.id || normSlug(cc) === catHandle;
+      return (cc.id && cc.id === cat.id) || (cc.handle && normSlug(cc.handle) === catHandle);
+    })) return true;
+
+    // Check category_ids array
+    const catIds = p.category_ids || p.categoryIds;
+    if (Array.isArray(catIds) && catIds.includes(cat.id)) return true;
+
+    return false;
+  });
+}
+
 http
   .createServer((req, res) => {
     if (!req.url) return notFound(res);
@@ -189,10 +273,17 @@ http
     const parts = pathname.split("/").filter(Boolean);
 
     const data = loadData();
-    const { categories, products } = data;
+    const { categories, products, categoryMapping } = data;
 
     // health — always returns, shows real status
     if (pathname === "/api/health") {
+      // Compute per-category counts for verification
+      const perCategory = {};
+      for (const cat of categories) {
+        const filtered = filterProductsByCategory(products, cat, categoryMapping);
+        perCategory[cat.handle] = filtered.length;
+      }
+
       return send(res, 200, {
         ok: data.ok,
         errors: data.errors,
@@ -202,8 +293,14 @@ http
           categories_exists: exists(CATS_FILE),
           products: PRODS_FILE,
           products_exists: exists(PRODS_FILE),
+          by_category: BY_CAT_FILE,
+          by_category_exists: exists(BY_CAT_FILE),
         },
-        counts: { categories: categories.length, products: products.length },
+        counts: {
+          categories: categories.length,
+          products: products.length,
+          per_category: perCategory,
+        },
       });
     }
 
@@ -230,7 +327,7 @@ http
       const catHandle = normSlug(parts[1]);
       const cat = categories.find((c) => normSlug(c.handle) === catHandle);
       if (!cat) return send(res, 200, []);
-      const out = products.filter((p) => (p.product_category_id || p.categoryId) === cat.id);
+      const out = filterProductsByCategory(products, cat, categoryMapping);
       return send(res, 200, out);
     }
 
@@ -240,4 +337,5 @@ http
     console.log(`[adapter] Listening on :${PORT} | DATA_DIR: ${DATA_DIR}`);
     console.log(`[adapter] CATS: ${CATS_FILE}`);
     console.log(`[adapter] PRODS: ${PRODS_FILE}`);
+    console.log(`[adapter] BY_CAT: ${BY_CAT_FILE} (exists: ${exists(BY_CAT_FILE)})`);
   });
