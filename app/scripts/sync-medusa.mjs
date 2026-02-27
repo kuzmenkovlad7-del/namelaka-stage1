@@ -1,242 +1,153 @@
-#!/usr/bin/env node
-/**
- * sync-medusa.mjs
- *
- * Syncs categories and products from a local Medusa Store API into
- * app/.local-data/ so the adapter-server can serve them.
- *
- * Usage:
- *   node app/scripts/sync-medusa.mjs
- *   MEDUSA_URL=http://localhost:9000 PUBLISHABLE_KEY=pk_xxx node app/scripts/sync-medusa.mjs
- *
- * Output files (written to DATA_DIR, default app/.local-data/):
- *   medusa_categories.json       – raw categories list
- *   medusa_products.json         – all products enriched with category IDs
- *   products_by_category.json    – { categoryHandle: [productId, ...] }
- */
-
 import fs from "fs";
 import path from "path";
-import { fileURLToPath } from "url";
+import os from "os";
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const APP_DIR = path.resolve(__dirname, "..");
-
-const MEDUSA_URL = (process.env.MEDUSA_URL || "http://localhost:9000").replace(/\/$/, "");
-const PUB_KEY = process.env.PUBLISHABLE_KEY || process.env.NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY || "";
+const APP_DIR = process.cwd();
 const DATA_DIR = process.env.DATA_DIR || path.join(APP_DIR, ".local-data");
+const MEDUSA_URL = (process.env.MEDUSA_URL || "http://127.0.0.1:9000").replace(/\/+$/, "");
 
-function log(msg) {
-  process.stdout.write(`[sync] ${msg}\n`);
+function readKeyFromFile() {
+  try {
+    const p = path.join(os.homedir(), "projects", "namelaka_stage1_key.env");
+    if (!fs.existsSync(p)) return "";
+    const t = fs.readFileSync(p, "utf8");
+    const m = t.match(/^PUBLISHABLE_API_KEY=(.+)$/m);
+    return m ? m[1].trim() : "";
+  } catch {
+    return "";
+  }
 }
 
-function headers() {
-  const h = { "Content-Type": "application/json" };
-  if (PUB_KEY) h["x-publishable-api-key"] = PUB_KEY;
-  return h;
-}
+const KEY =
+  (process.env.PUBLISHABLE_API_KEY || "").trim() ||
+  (process.env.PUBLISHABLE_KEY || "").trim() ||
+  readKeyFromFile();
 
-async function get(path) {
-  const url = `${MEDUSA_URL}${path}`;
-  log(`GET ${url}`);
-  const res = await fetch(url, { headers: headers() });
+const HEADERS = KEY ? { "x-publishable-api-key": KEY } : {};
+
+async function fetchJson(url) {
+  const res = await fetch(url, { headers: HEADERS });
+  const text = await res.text();
   if (!res.ok) {
-    const body = await res.text().catch(() => "");
-    throw new Error(`HTTP ${res.status} ${res.statusText} for ${url}\n${body.slice(0, 400)}`);
+    throw new Error(`HTTP ${res.status} ${res.statusText} for ${url}\n${text}`);
   }
-  return res.json();
-}
-
-async function fetchAllPages(basePath, resultKey, pageSize = 100) {
-  const all = [];
-  let offset = 0;
-  while (true) {
-    const sep = basePath.includes("?") ? "&" : "?";
-    const data = await get(`${basePath}${sep}limit=${pageSize}&offset=${offset}`);
-    const items = data[resultKey] ?? data.data ?? [];
-    all.push(...items);
-    if (items.length < pageSize) break;
-    offset += pageSize;
-  }
-  return all;
-}
-
-async function fetchRegionId() {
   try {
-    const data = await get("/store/regions?limit=1");
-    const regions = data.regions ?? data.data ?? [];
-    if (regions.length > 0) {
-      const id = regions[0].id;
-      log(`Using region_id: ${id} (${regions[0].name ?? ""})`);
-      return id;
-    }
+    return JSON.parse(text);
   } catch (e) {
-    log(`WARN: could not fetch regions – prices may be null. ${e.message}`);
-  }
-  return null;
-}
-
-async function fetchCategories() {
-  try {
-    return await fetchAllPages("/store/product-categories", "product_categories");
-  } catch (e) {
-    throw new Error(`fetchCategories failed: ${e.message}`);
+    throw new Error(`Invalid JSON from ${url}\n${text.slice(0, 500)}`);
   }
 }
 
-/**
- * Fetch all products belonging to a category, trying both Medusa v1 and v2
- * query param conventions.
- */
-async function fetchProductsForCategory(categoryId, regionId) {
-  const regionParam = regionId ? `&region_id=${encodeURIComponent(regionId)}` : "";
-
-  // Medusa v2 uses category_id[] array syntax; v1 uses category_id
-  const paths = [
-    `/store/products?category_id[]=${encodeURIComponent(categoryId)}${regionParam}`,
-    `/store/products?category_id=${encodeURIComponent(categoryId)}${regionParam}`,
-  ];
-
-  for (const p of paths) {
-    try {
-      const all = await fetchAllPages(p.split("?")[0] + "?" + p.split("?")[1], "products");
-      if (all.length > 0 || p === paths[paths.length - 1]) {
-        return all;
-      }
-    } catch (e) {
-      // try next
-    }
+function pickArray(j, keys) {
+  for (const k of keys) {
+    const v = j?.[k];
+    if (Array.isArray(v)) return v;
   }
-  return [];
+  return Array.isArray(j) ? j : [];
 }
 
-function normUrl(u) {
-  if (!u) return null;
-  try {
-    const parsed = new URL(u);
-    if (parsed.hostname === "localhost" || parsed.hostname === "127.0.0.1") {
-      return parsed.pathname + (parsed.search || "");
-    }
-  } catch (_) {}
-  return u;
-}
-
-function extractPrice(product, regionId) {
-  // calculated_price is present when region_id is supplied
-  const variants = product.variants ?? [];
-  for (const v of variants) {
-    if (v.calculated_price?.calculated_amount != null) {
-      return v.calculated_price.calculated_amount;
-    }
-    const prices = v.prices ?? [];
-    for (const pr of prices) {
-      if (pr.amount != null) return pr.amount;
-    }
-  }
-  return product.price ?? null;
-}
-
-function enrichProduct(product, categoryId, categoryHandle, regionId) {
-  const price = extractPrice(product, regionId);
-
-  const images = (product.images ?? []).map((img) => {
-    if (typeof img === "string") return { url: normUrl(img) };
-    if (img && typeof img === "object") return { ...img, url: normUrl(img.url) };
-    return null;
-  }).filter(Boolean);
-
-  let thumbnail = product.thumbnail ? normUrl(product.thumbnail) : null;
-  if (!thumbnail && images[0]?.url) thumbnail = images[0].url;
-
-  // Build categories array (preserve existing + add this one if not present)
-  const existingCats = Array.isArray(product.categories) ? product.categories : [];
-  const alreadyLinked = existingCats.some((c) => c.id === categoryId);
-  const categories = alreadyLinked
-    ? existingCats
-    : [...existingCats, { id: categoryId, handle: categoryHandle }];
-
-  return {
-    ...product,
-    product_category_id: categoryId,
-    category_id: categoryId,
-    categories,
-    price,
-    thumbnail,
-    images,
-  };
+function ensureDir(p) {
+  fs.mkdirSync(p, { recursive: true });
 }
 
 async function main() {
-  fs.mkdirSync(DATA_DIR, { recursive: true });
+  ensureDir(DATA_DIR);
 
-  log(`DATA_DIR: ${DATA_DIR}`);
-  log(`MEDUSA_URL: ${MEDUSA_URL}`);
+  console.log(`[sync] DATA_DIR: ${DATA_DIR}`);
+  console.log(`[sync] MEDUSA_URL: ${MEDUSA_URL}`);
+  console.log(`[sync] KEY: ${KEY ? "OK" : "MISSING"}`);
 
-  // 1. fetch region
-  const regionId = await fetchRegionId();
+  if (!KEY) {
+    throw new Error("Missing PUBLISHABLE_API_KEY. Put it into ~/projects/namelaka_stage1_key.env");
+  }
 
-  // 2. fetch categories
-  log("Fetching categories…");
-  const categories = await fetchCategories();
-  log(`  Got ${categories.length} categories`);
+  // 1) region_id (для цен)
+  let regionId = "";
+  try {
+    const regions = await fetchJson(`${MEDUSA_URL}/store/regions?limit=50`);
+    const arr = pickArray(regions, ["regions", "items"]);
+    regionId = arr?.[0]?.id || "";
+  } catch (e) {
+    console.log(`[sync] WARN: regions not fetched, prices may be null`);
+  }
 
-  const catsOut = { product_categories: categories, count: categories.length, offset: 0, limit: 500 };
-  fs.writeFileSync(path.join(DATA_DIR, "medusa_categories.json"), JSON.stringify(catsOut, null, 2));
-  log(`Wrote medusa_categories.json`);
+  // 2) categories
+  console.log("[sync] Fetching categories…");
+  const catResp = await fetchJson(`${MEDUSA_URL}/store/product-categories?limit=200&offset=0`);
+  const categories = pickArray(catResp, ["product_categories", "categories", "items"]);
+  fs.writeFileSync(path.join(DATA_DIR, "medusa_categories.json"), JSON.stringify(categories, null, 2));
 
-  // 3. fetch products per category, dedup
-  const productMap = new Map(); // id -> enriched product
-  const byCategory = {}; // categoryHandle -> [productId, ...]
+  // 3) products per category -> build mapping
+  console.log("[sync] Fetching products per category…");
+  const byCategory = {};
+  const productsById = new Map();
 
-  for (const cat of categories) {
-    const catId = cat.id;
-    const catHandle = cat.handle ?? cat.name ?? catId;
-    log(`Fetching products for category ${catHandle} (${catId})…`);
+  for (const c of categories) {
+    const handle = String(c?.handle || "").replace(/^\/+/, "");
+    const id = c?.id;
+    if (!handle || !id) continue;
 
-    const prods = await fetchProductsForCategory(catId, regionId);
-    log(`  Got ${prods.length} products`);
+    const url =
+      `${MEDUSA_URL}/store/products?limit=200&category_id=${encodeURIComponent(id)}` +
+      (regionId ? `&region_id=${encodeURIComponent(regionId)}` : "");
 
-    byCategory[catHandle] = [];
-    for (const p of prods) {
-      const enriched = enrichProduct(p, catId, catHandle, regionId);
-      if (productMap.has(p.id)) {
-        // merge categories
-        const existing = productMap.get(p.id);
-        const ids = new Set(existing.categories.map((c) => c.id));
-        for (const c of enriched.categories) {
-          if (!ids.has(c.id)) existing.categories.push(c);
-        }
-      } else {
-        productMap.set(p.id, enriched);
+    const prodResp = await fetchJson(url);
+    const products = pickArray(prodResp, ["products", "items"]);
+    const ids = [];
+
+    for (const p of products) {
+      if (!p?.id) continue;
+      ids.push(p.id);
+
+      // обогащаем продукт категориями, чтобы дальше было проще
+      const cur = productsById.get(p.id) || p;
+      const cats = Array.isArray(cur.categories) ? cur.categories : [];
+      if (!cats.some((x) => x?.id === id)) {
+        cats.push({ id, handle, name: c?.name || "" });
       }
-      byCategory[catHandle].push(p.id);
+      cur.categories = cats;
+
+      // нормализуем handle у продукта (убрать ведущий /)
+      if (typeof cur.handle === "string") cur.handle = cur.handle.replace(/^\/+/, "");
+
+      productsById.set(p.id, cur);
     }
+
+    byCategory[handle] = ids;
   }
 
-  // 4. write products
-  const allProducts = [...productMap.values()];
-  const prodsOut = { products: allProducts, count: allProducts.length, offset: 0, limit: 9999 };
-  fs.writeFileSync(path.join(DATA_DIR, "medusa_products.json"), JSON.stringify(prodsOut, null, 2));
-  log(`Wrote medusa_products.json (${allProducts.length} products)`);
-
-  // 5. write category mapping
-  fs.writeFileSync(
-    path.join(DATA_DIR, "products_by_category.json"),
-    JSON.stringify(byCategory, null, 2)
-  );
-  log(`Wrote products_by_category.json`);
-
-  // 6. summary
-  log("\n=== Sync summary ===");
-  log(`  Categories: ${categories.length}`);
-  log(`  Total products: ${allProducts.length}`);
-  for (const [handle, ids] of Object.entries(byCategory)) {
-    log(`  ${handle}: ${ids.length} product(s)`);
+  // 4) also fetch all products (на всякий случай)
+  console.log("[sync] Fetching all products…");
+  const allUrl =
+    `${MEDUSA_URL}/store/products?limit=200` +
+    (regionId ? `&region_id=${encodeURIComponent(regionId)}` : "");
+  const allResp = await fetchJson(allUrl);
+  const allProducts = pickArray(allResp, ["products", "items"]);
+  for (const p of allProducts) {
+    if (!p?.id) continue;
+    const cur = productsById.get(p.id) || p;
+    if (typeof cur.handle === "string") cur.handle = cur.handle.replace(/^\/+/, "");
+    productsById.set(p.id, cur);
   }
-  log("Done.");
+
+  const mergedProducts = Array.from(productsById.values());
+
+  fs.writeFileSync(path.join(DATA_DIR, "medusa_products.json"), JSON.stringify(mergedProducts, null, 2));
+  fs.writeFileSync(path.join(DATA_DIR, "products_by_category.json"), JSON.stringify(byCategory, null, 2));
+
+  // summary
+  const perCat = Object.fromEntries(Object.entries(byCategory).map(([k, v]) => [k, v.length]));
+  console.log("[sync] OK");
+  console.log(`[sync] categories: ${categories.length}`);
+  console.log(`[sync] products:   ${mergedProducts.length}`);
+  console.log(`[sync] per_category:`, perCat);
+  console.log(`[sync] wrote:`);
+  console.log(`  ${path.join(DATA_DIR, "medusa_categories.json")}`);
+  console.log(`  ${path.join(DATA_DIR, "medusa_products.json")}`);
+  console.log(`  ${path.join(DATA_DIR, "products_by_category.json")}`);
 }
 
 main().catch((e) => {
-  process.stderr.write(`[sync] ERROR: ${e.message}\n${e.stack}\n`);
+  console.error(String(e?.message || e));
   process.exit(1);
 });
